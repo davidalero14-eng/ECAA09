@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Marmitaê - Runner de Testes Automatizados</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 2rem; background: #fdfaf7; color: #333; }
+    h1 { color: #d84315; }
+    .test-box { background: #fff; border-radius: 8px; padding: 1rem 1.5rem; margin-bottom: 0.75rem; border-left: 6px solid #ccc; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
+    .passed { border-color: #2e7d32; }
+    .failed { border-color: #c62828; background: #ffebee; }
+    .badge { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 4px; font-weight: bold; font-size: 0.8rem; margin-right: 0.5rem; }
+    .badge-pass { background: #e8f5e9; color: #2e7d32; }
+    .badge-fail { background: #ffebee; color: #c62828; }
+    .summary { font-size: 1.2rem; font-weight: bold; margin-bottom: 1.5rem; }
+    .btn-voltar { display: inline-block; margin-top: 1.5rem; padding: 0.6rem 1.2rem; background: #e65100; color: #fff; text-decoration: none; border-radius: 20px; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <h1>🧪 Marmitaê - Execução dos 12 Testes Obrigatórios</h1>
+  <div class="summary" id="summary">Executando testes...</div>
+  <div id="results"></div>
+  <a href="index.html" class="btn-voltar">← Voltar para o Marmitaê</a>
+
+  <script type="module">
+    import { runAllTests } from './js/tests.js';
+
+    const results = runAllTests();
+    const resultsContainer = document.getElementById('results');
+    const summaryContainer = document.getElementById('summary');
+
+    let passedCount = 0;
+    resultsContainer.innerHTML = '';
+
+    results.forEach(t => {
+      if (t.passed) passedCount++;
+      const div = document.createElement('div');
+      div.className = `test-box ${t.passed ? 'passed' : 'failed'}`;
+      div.innerHTML = `
+        <span class="badge ${t.passed ? 'badge-pass' : 'badge-fail'}">${t.passed ? 'PASSOU' : 'FALHOU'}</span>
+        <strong>${t.scenario}</strong>
+        ${t.details ? `<div style="font-size: 0.85rem; color: #666; margin-top: 0.25rem;">Detalhes: ${t.details}</div>` : ''}
+      `;
+      resultsContainer.appendChild(div);
+    });
+
+    summaryContainer.innerHTML = `Resultado Final: ${passedCount} de ${results.length} testes passaram com sucesso! ${passedCount === results.length ? '🎉 TODOS OS REQUISITOS ATENDIDOS' : '⚠️ ATENÇÃO'}`;
+  </script>
+</body>
+</html>

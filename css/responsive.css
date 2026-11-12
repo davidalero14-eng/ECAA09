@@ -1,0 +1,111 @@
+/* Marmitaê - Responsividade para Mobile e Tablets */
+
+@media (max-width: 992px) {
+  .app-main {
+    grid-template-columns: 1fr;
+    height: auto;
+    padding: 0.75rem;
+    gap: 1rem;
+  }
+
+  .chat-section {
+    height: calc(100vh - 130px);
+  }
+
+  /* Painel lateral vira Drawer / Modal deslizante no Mobile */
+  .side-panel {
+    position: fixed;
+    top: 0;
+    right: -100%;
+    bottom: 0;
+    width: 320px;
+    max-width: 85vw;
+    background: #ffffff;
+    z-index: 1050;
+    box-shadow: -5px 0 25px rgba(0, 0, 0, 0.2);
+    transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .side-panel.aberto {
+    right: 0;
+  }
+
+  .side-panel-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 1040;
+    display: none;
+  }
+
+  .side-panel-backdrop.visivel {
+    display: block;
+  }
+
+  .btn-close-cart-mobile {
+    display: block !important;
+  }
+}
+
+@media (min-width: 993px) {
+  .btn-close-cart-mobile {
+    display: none !important;
+  }
+}
+
+@media (max-width: 576px) {
+  .app-header {
+    padding: 0.6rem 0.75rem;
+  }
+
+  .brand-icon {
+    width: 36px;
+    height: 36px;
+    font-size: 1.25rem;
+  }
+
+  .brand-info h1 {
+    font-size: 1.1rem;
+  }
+
+  .brand-info p {
+    display: none;
+  }
+
+  .status-indicator span {
+    display: none;
+  }
+
+  .btn-header span {
+    display: none;
+  }
+
+  .btn-header {
+    padding: 0.45rem 0.6rem;
+  }
+
+  .mensagem {
+    max-width: 92%;
+  }
+
+  .quick-suggestions {
+    padding: 0.4rem 0.6rem;
+  }
+
+  .chip-btn {
+    font-size: 0.75rem;
+    padding: 0.35rem 0.65rem;
+  }
+
+  .chat-input-area {
+    padding: 0.6rem;
+  }
+
+  .chat-input {
+    font-size: 0.88rem;
+    padding: 0.65rem 0.9rem;
+  }
+}
