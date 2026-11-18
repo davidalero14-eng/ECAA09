@@ -1,7 +1,8 @@
 /**
- * Marmitaê - Motor Determinístico de Atendimento (Modo Demonstração Aprimorado)
- * Interpreta linguagem natural com alta cobertura, gerencia contexto, personalizações,
- * suporte a cupons de desconto, perguntas de cardápio e cards visuais de produtos.
+ * Marmitaê - Motor Determinístico de Atendimento Conversacional Inteligente
+ * Gerencia máquina de estados de conversação (nome, endereço, pagamento, troco),
+ * interpreta linguagem natural contextual, recomendações, dúvidas do cardápio,
+ * cupons promocionais, personalizações e cards visuais de produtos.
  */
 
 import { CARDAPIO, consultarCardapio, buscarProdutoPorNome, buscarProdutoPorId, getDiaAtual, DIAS_SEMANA_NOMES, CUPONS_VALIDOS } from './menu.js';
@@ -12,10 +13,12 @@ export class DeterministicAgent {
     this.carrinho = carrinho;
     this.checkout = checkout;
     this.ultimoItemMencionadoId = null;
+    this.aguardandoDado = null; // 'nome' | 'endereco' | 'formaPagamento' | 'troco'
   }
 
   reset() {
     this.ultimoItemMencionadoId = null;
+    this.aguardandoDado = null;
   }
 
   /**
@@ -28,14 +31,96 @@ export class DeterministicAgent {
     const texto = raw.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
     const acoes = [];
 
+    // =========================================================================
+    // 0. GESTÃO DE ESTADO ATIVO (QUANDO O ROBÔ PERGUNTOU UM DADO ESPECÍFICO)
+    // =========================================================================
+
+    // A. Aguardando Nome do Cliente
+    if (this.aguardandoDado === 'nome') {
+      let nomeLimpo = raw
+        .replace(/^(meu nome [eé]|sou o|sou a|me chamo|pode me chamar de|chama de|nome:\s*)/i, '')
+        .replace(/[!.,?]/g, '')
+        .trim();
+
+      if (nomeLimpo.length >= 2 && !this.ehIntencaoDeMudancaGeral(texto)) {
+        // Formata Primeira Letra Maiúscula
+        nomeLimpo = nomeLimpo.split(' ')
+          .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+          .join(' ');
+
+        this.checkout.setNomeCliente(nomeLimpo);
+        this.aguardandoDado = null;
+        acoes.push({ tipo: 'definir_nome', nome: nomeLimpo });
+
+        // Continua o fluxo imediatamente para o próximo dado pendente
+        return this.gerarPromptResumoConfirmacao(acoes, `Prazer em te atender, **${nomeLimpo}**! 😄`);
+      }
+    }
+
+    // B. Aguardando Endereço de Entrega
+    if (this.aguardandoDado === 'endereco') {
+      if (!this.ehIntencaoDeMudancaGeral(texto) && raw.length >= 4) {
+        this.carrinho.definirTipoEntrega('entrega');
+        this.checkout.setEndereco(raw);
+        this.aguardandoDado = null;
+        acoes.push({ tipo: 'definir_entrega', tipo: 'entrega', endereco: raw });
+
+        return this.gerarPromptResumoConfirmacao(acoes, `Endereço de entrega anotado com sucesso! 🛵 (Taxa de entrega: R$ 5,00).`);
+      }
+    }
+
+    // C. Aguardando Forma de Pagamento
+    if (this.aguardandoDado === 'formaPagamento') {
+      if (texto.includes('pix') || texto.includes('dinheiro') || texto.includes('credito') || texto.includes('debito') || texto.includes('cartao')) {
+        let troco = null;
+        const matchTroco = texto.match(/troco\s*(?:para|pra)?\s*(?:r\$)?\s*(\d+)/i);
+        if (matchTroco) {
+          troco = parseFloat(matchTroco[1]);
+        }
+
+        if (texto.includes('pix')) this.checkout.setFormaPagamento('PIX');
+        else if (texto.includes('dinheiro')) this.checkout.setFormaPagamento('Dinheiro', troco);
+        else if (texto.includes('credito')) this.checkout.setFormaPagamento('Cartão de Crédito');
+        else if (texto.includes('debito')) this.checkout.setFormaPagamento('Cartão de Débito');
+        else this.checkout.setFormaPagamento('Cartão');
+
+        acoes.push({ tipo: 'definir_pagamento', forma: this.checkout.cliente.formaPagamento });
+        this.aguardandoDado = null;
+
+        if (this.checkout.cliente.formaPagamento === 'Dinheiro' && !troco && !texto.includes('sem troco') && !texto.includes('nao precisa')) {
+          this.aguardandoDado = 'troco';
+          return {
+            resposta: 'Anotado, pagamento em dinheiro! 💵 Você vai precisar de troco? Se sim, para quanto?',
+            acoesExecutadas: acoes
+          };
+        }
+
+        return this.gerarPromptResumoConfirmacao(acoes, `Forma de pagamento registrada: **${this.checkout.cliente.formaPagamento}**.`);
+      }
+    }
+
+    // D. Aguardando Informação de Troco
+    if (this.aguardandoDado === 'troco') {
+      const matchNum = texto.match(/\b\d+([,.]\d{2})?\b/);
+      if (matchNum) {
+        const valTroco = parseFloat(matchNum[0].replace(',', '.'));
+        this.checkout.cliente.trocoPara = valTroco;
+      }
+      this.aguardandoDado = null;
+      return this.gerarPromptResumoConfirmacao(acoes, `Perfeito! Levamos troco certinho.`);
+    }
+
+    // =========================================================================
     // 1. CONFIRMAÇÃO FINAL DE PEDIDO
+    // =========================================================================
     if (this.checkout.aguardandoConfirmacaoFinal) {
-      if (/^(sim|s|confirmo|pode confirmar|pode fechar|ta certo|tá certo|isso|bora|fechar|ok|positivo)$/i.test(texto) ||
+      if (/^(sim|s|confirmo|pode confirmar|pode fechar|ta certo|tá certo|isso|bora|fechar|ok|positivo|manda)$/i.test(texto) ||
           texto.includes('pode confirmar') || texto.includes('pode fechar') || texto.includes('esta certo') || texto.includes('esta correto')) {
         const resultado = this.checkout.confirmarEFinalizar();
         if (resultado.sucesso) {
           const ped = resultado.pedido;
           acoes.push({ tipo: 'pedido_finalizado', dados: ped });
+          this.aguardandoDado = null;
           return {
             resposta: `🎉 **Pedido Confirmado com Sucesso!**\n\nNúmero do Pedido: **${ped.numeroPedido}**\nCliente: **${ped.clienteNome}**\nTotal: **R$ ${ped.total.toFixed(2).replace('.', ',')}**\nForma de Pagamento: **${ped.infoPagamento}**\n${ped.infoEntrega}\n\nSeu pedido já foi enviado para a cozinha com todo carinho! Tempo estimado de preparo/entrega: 35 a 50 minutos. 🍲✨\n\nMuito obrigado pela preferência! Caso queira fazer outro pedido, basta me avisar.`,
             acoesExecutadas: acoes
@@ -55,9 +140,20 @@ export class DeterministicAgent {
       }
     }
 
-    // 2. CUPONS DE DESCONTO ("tem cupom", "aplica cupom", "codigo primeira compra", etc.)
+    // =========================================================================
+    // 2. EXTRAÇÃO PASSIVA DE NOME ("meu nome é David", "sou o Carlos")
+    // =========================================================================
+    const matchNomePassivo = raw.match(/(?:meu nome [eé]|sou o|sou a|me chamo|pode me chamar de|nome:\s*)\s*([a-zA-ZÀ-ÿ]+)/i);
+    if (matchNomePassivo) {
+      const nomeEncontrado = matchNomePassivo[1].charAt(0).toUpperCase() + matchNomePassivo[1].slice(1).toLowerCase();
+      this.checkout.setNomeCliente(nomeEncontrado);
+      acoes.push({ tipo: 'definir_nome', nome: nomeEncontrado });
+    }
+
+    // =========================================================================
+    // 3. CUPONS DE DESCONTO ("tem cupom", "aplica cupom", "codigo primeira compra")
+    // =========================================================================
     if (texto.includes('cupom') || texto.includes('desconto') || texto.includes('promocao') || texto.includes('promoção')) {
-      // Verifica se mencionou um cupom específico
       let cupomMencionado = null;
       if (texto.includes('primeiracompra') || texto.includes('primeira compra')) {
         cupomMencionado = 'PRIMEIRACOMPRA';
@@ -78,7 +174,6 @@ export class DeterministicAgent {
           };
         }
       } else {
-        // Explicar cupons disponíveis
         return {
           resposta: `Temos ótimos cupons disponíveis hoje! 🎟️\n\n• **PRIMEIRACOMPRA**: R$ 5,00 de desconto no seu pedido!\n• **MARMITAE10**: 10% de desconto no total dos pratos!\n• **FRETEGRATIS**: Entrega grátis na sua casa!\n\nPara aplicar, basta me dizer: *"Aplica o cupom PRIMEIRACOMPRA"* ou o código que preferir! 😊`,
           acoesExecutadas: acoes
@@ -86,7 +181,9 @@ export class DeterministicAgent {
       }
     }
 
-    // 3. MUDANÇA DE QUANTIDADE ("na verdade quero 3", "muda para duas", "quero mais uma")
+    // =========================================================================
+    // 4. MUDANÇA DE QUANTIDADE ("na verdade quero 3", "muda para duas", "quero mais uma")
+    // =========================================================================
     const querMaisUma = texto.includes('mais uma') || texto.includes('quero outra') || texto.includes('adiciona mais um');
     
     if (querMaisUma && this.ultimoItemMencionadoId) {
@@ -117,7 +214,9 @@ export class DeterministicAgent {
       };
     }
 
-    // 4. REMOÇÃO DE ITEM ("cancela a bebida", "tira o refrigerante", "remove o pudim")
+    // =========================================================================
+    // 5. REMOÇÃO DE ITEM ("cancela a bebida", "tira o refrigerante", "remove o pudim")
+    // =========================================================================
     if (texto.includes('cancela') || texto.includes('tira') || texto.includes('remove') || texto.includes('exclui')) {
       if (texto.includes('bebida') || texto.includes('refri') || texto.includes('coca') || texto.includes('suco') || texto.includes('agua')) {
         const itemBebida = this.carrinho.itens.find(i => i.categoria === 'bebidas');
@@ -143,7 +242,56 @@ export class DeterministicAgent {
       }
     }
 
-    // 5. CONSULTA DE CARDÁPIO GERAL OU DO DIA (com cards visuais)
+    // =========================================================================
+    // 6. DÚVIDAS E PERGUNTAS FREQUENTES (RECOMENDAÇÕES, HORÁRIO, INGREDIENTES)
+    // =========================================================================
+    if (texto.includes('mais pedid') || texto.includes('mais vendid') || texto.includes('recomenda') || texto.includes('sugestao')) {
+      return {
+        resposta: `Nossos pratos campeões de pedidos são o suculento **Bife Acebolado com Batata Frita** (R$ 24,90) e a cremosa **Parmegiana de Frango** (R$ 27,90)! 🥩🍗\n\nSe preferir uma opção mais leve e saudável, o **Frango Grelhado com Legumes** (R$ 21,90) é perfeito! Qual deles te agrada mais?`,
+        acoesExecutadas: acoes
+      };
+    }
+
+    if (texto.includes('vegetariana') || texto.includes('sem carne') || texto.includes('opcao vegetariana') || texto.includes('vegan')) {
+      const veg = CARDAPIO.find(p => p.id === 'marmita-vegetariana');
+      return {
+        resposta: `Temos uma opção deliciosa sem carne! 🥗\n\n🍛 **${veg.nome}** (R$ ${veg.preco.toFixed(2).replace('.', ',')}):\n${veg.descricao}\n\nVocê também pode pedir para trocar ou retirar ingredientes. Gostaria de adicionar uma marmita vegetariana?`,
+        acoesExecutadas: acoes,
+        cards: [veg]
+      };
+    }
+
+    if (texto.includes('horario') || texto.includes('que horas abre') || texto.includes('que horas fecha') || texto.includes('funcionamento')) {
+      return {
+        resposta: `⏰ **Horário de Atendimento Marmitaê:**\n• De **Segunda a Sábado**, das **11:00 às 15:00**.\n• Aos Domingos descansamos para recarregar as energias!\n\nAs entregas saem quentinhas durante todo o horário de almoço. Posso anotar seu pedido? 😊`,
+        acoesExecutadas: acoes
+      };
+    }
+
+    if (texto.includes('taxa de entrega') || texto.includes('quanto e o frete') || texto.includes('valor do frete') || texto.includes('valor da entrega')) {
+      return {
+        resposta: `🛵 **Taxa de Entrega:**\n• Entrega em domicílio: taxa fixa de apenas **R$ 5,00** para qualquer bairro atendido!\n• Retirada no balcão: **Grátis (R$ 0,00)**!\n• Dica: use o cupom **FRETEGRATIS** no seu pedido para entrega sem custo! 🎟️`,
+        acoesExecutadas: acoes
+      };
+    }
+
+    if (texto.includes('onde fica') || texto.includes('endereco de voces') || texto.includes('localizacao') || texto.includes('onde retirar')) {
+      return {
+        resposta: `📍 O restaurante e balcão de retirada do **Marmitaê** fica na **Av. Central das Marmitas, nº 500 - Centro**.\nVocê pode escolher entrega em casa ou retirada rápida no balcão!`,
+        acoesExecutadas: acoes
+      };
+    }
+
+    if (texto.includes('formas de pagamento') || texto.includes('como posso pagar') || texto.includes('aceita cartao') || texto.includes('aceita pix')) {
+      return {
+        resposta: `💳 **Formas de Pagamento Aceitas:**\n• **PIX** (chave fornecida na confirmação)\n• **Cartão de Crédito ou Débito** na maquininha na entrega\n• **Dinheiro** (com troco se precisar)\n\nQual forma você prefere utilizar hoje?`,
+        acoesExecutadas: acoes
+      };
+    }
+
+    // =========================================================================
+    // 7. CONSULTA DE CARDÁPIO GERAL OU DO DIA
+    // =========================================================================
     if (
       texto.includes('cardapio') || texto.includes('opcoes') || texto.includes('opções') ||
       texto.includes('o que tem') || texto.includes('quais sao os pratos') || texto.includes('marmitas de hoje')
@@ -159,7 +307,9 @@ export class DeterministicAgent {
       };
     }
 
-    // 6. CONSULTA DE BEBIDAS OU SOBREMESAS (com cards visuais)
+    // =========================================================================
+    // 8. CONSULTA DE BEBIDAS OU SOBREMESAS
+    // =========================================================================
     if (texto.includes('bebida') && !texto.includes('adiciona') && !texto.includes('coloca') && !texto.includes('quero')) {
       const bebidas = CARDAPIO.filter(p => p.categoria === 'bebidas');
       return {
@@ -178,7 +328,9 @@ export class DeterministicAgent {
       };
     }
 
-    // 7. PERSONALIZAÇÃO DE ITEM JÁ EXISTENTE OU RECENTE
+    // =========================================================================
+    // 9. PERSONALIZAÇÃO DE ITEM JÁ EXISTENTE OU RECENTE
+    // =========================================================================
     const ehPersonalizacaoIsolada = 
       (texto.includes('troca') || texto.includes('sem ') || texto.includes('tira ') || texto.includes('com ') || texto.includes('passado') || texto.includes('pure no lugar')) &&
       !texto.includes('marmita de') && !texto.includes('quero uma');
@@ -195,7 +347,9 @@ export class DeterministicAgent {
       }
     }
 
-    // 8. INCLUSÃO DE ITENS (Marmitas, Bebidas, Sobremesas)
+    // =========================================================================
+    // 10. INCLUSÃO DE ITENS (Marmitas, Bebidas, Sobremesas)
+    // =========================================================================
     const pedidosDetectados = this.detectarMultiplosPedidos(raw);
     if (pedidosDetectados.length > 0) {
       let respostasPartes = [];
@@ -239,7 +393,9 @@ export class DeterministicAgent {
       };
     }
 
-    // 9. TIPO DE ENTREGA / RETIRADA
+    // =========================================================================
+    // 11. TIPO DE ENTREGA / RETIRADA
+    // =========================================================================
     if (texto.includes('retirar') || texto.includes('retirada') || texto.includes('buscar no local') || texto.includes('passo ai') || texto.includes('pegar ai')) {
       this.carrinho.definirTipoEntrega('retirada');
       acoes.push({ tipo: 'definir_entrega', tipo: 'retirada' });
@@ -263,7 +419,9 @@ export class DeterministicAgent {
       }
     }
 
-    // 10. FORMA DE PAGAMENTO ("vou pagar no pix", "cartao de credito", "dinheiro, troco pra 50")
+    // =========================================================================
+    // 12. FORMA DE PAGAMENTO ("vou pagar no pix", "cartao de credito", "dinheiro, troco pra 50")
+    // =========================================================================
     if (texto.includes('pix') || texto.includes('dinheiro') || texto.includes('credito') || texto.includes('debito') || texto.includes('cartao')) {
       let troco = null;
       const matchTroco = texto.match(/troco\s*(?:para|pra)?\s*(?:r\$)?\s*(\d+)/i);
@@ -280,6 +438,7 @@ export class DeterministicAgent {
       acoes.push({ tipo: 'definir_pagamento', forma: this.checkout.cliente.formaPagamento });
 
       if (this.carrinho.tipoEntrega === 'entrega' && !this.checkout.cliente.endereco.rua) {
+        this.aguardandoDado = 'endereco';
         return {
           resposta: `Forma de pagamento registrada como **${this.checkout.cliente.formaPagamento}**! 👍\n\nAgora só preciso do seu **nome** e **endereço de entrega** completo (rua, número e bairro) para calcularmos tudo.`,
           acoesExecutadas: acoes
@@ -289,7 +448,9 @@ export class DeterministicAgent {
       return this.gerarPromptResumoConfirmacao(acoes);
     }
 
-    // 11. CONSULTA DE VALOR / TOTAL / CARRINHO
+    // =========================================================================
+    // 13. CONSULTA DE VALOR / TOTAL / CARRINHO
+    // =========================================================================
     if (texto.includes('quanto') || texto.includes('total') || texto.includes('carrinho') || texto.includes('valor')) {
       const estado = this.carrinho.obterEstado();
       if (estado.vazio) {
@@ -306,30 +467,49 @@ export class DeterministicAgent {
       };
     }
 
-    // 12. FINALIZAÇÃO / CHECKOUT
+    // =========================================================================
+    // 14. FINALIZAÇÃO / CHECKOUT
+    // =========================================================================
     if (texto.includes('finalizar') || texto.includes('fechar') || texto.includes('concluir') || texto.includes('tudo certo')) {
       return this.gerarPromptResumoConfirmacao(acoes);
     }
 
-    // 13. CUMPRIMENTOS INICIAIS
+    // =========================================================================
+    // 15. CUMPRIMENTOS E AGRADECIMENTOS
+    // =========================================================================
     if (texto.includes('ola') || texto.includes('oi') || texto.includes('boa tarde') || texto.includes('bom dia') || texto.includes('boa noite')) {
+      const saudacaoNome = this.checkout.cliente.nome ? `, **${this.checkout.cliente.nome}**` : '';
       return {
-        resposta: 'Olá! Seja muito bem-vindo ao **Marmitaê**! 😄 Hoje temos pratos deliciosos feitos com tempero caseiro e ingredientes selecionados.\n\nVocê prefere opções com frango, carne bovina ou gostaria de conhecer nosso cardápio completo de hoje?',
+        resposta: `Olá${saudacaoNome}! Seja muito bem-vindo ao **Marmitaê**! 😄\nHoje temos pratos deliciosos feitos com tempero caseiro e ingredientes selecionados.\n\nVocê prefere opções com frango, carne bovina ou gostaria de conhecer nosso cardápio completo de hoje?`,
         acoesExecutadas: acoes
       };
     }
 
-    // Resposta padrão comercial
+    if (texto.includes('obrigad') || texto.includes('valeu') || texto.includes('agradec')) {
+      return {
+        resposta: 'Por nada! Estou sempre aqui para te servir a melhor comida caseira com muito carinho. Precisando, é só chamar! 😄🍲',
+        acoesExecutadas: acoes
+      };
+    }
+
+    // =========================================================================
+    // 16. RESPOSTA PADRÃO ACOLHEDORA E CONTEXTUALIZADA
+    // =========================================================================
     return {
       resposta: 'Entendido! Como posso te atender agora? Posso te apresentar o cardápio do dia, adicionar bebidas, personalizar marmitas, aplicar cupons ou fechar seu pedido! 😊',
       acoesExecutadas: acoes
     };
   }
 
+  ehIntencaoDeMudancaGeral(texto) {
+    return texto.includes('cancela') || texto.includes('cardapio') || texto.includes('marmita') || texto.includes('quero');
+  }
+
   extrairNomeCliente(texto) {
     const match = texto.match(/(?:meu nome [eé]|sou o|sou a|me chamo|nome:\s*)\s*([a-zA-ZÀ-ÿ]+)/i);
     if (match) {
-      this.checkout.setNomeCliente(match[1]);
+      const nomeFormatado = match[1].charAt(0).toUpperCase() + match[1].slice(1).toLowerCase();
+      this.checkout.setNomeCliente(nomeFormatado);
     }
   }
 
@@ -423,7 +603,7 @@ export class DeterministicAgent {
     return list;
   }
 
-  gerarPromptResumoConfirmacao(acoes) {
+  gerarPromptResumoConfirmacao(acoes, mensagemPrefacio = '') {
     const estado = this.carrinho.obterEstado();
     if (estado.vazio) {
       return {
@@ -434,27 +614,38 @@ export class DeterministicAgent {
 
     const pendencias = this.checkout.obterPendencias();
 
+    // 1. Falta o Nome
     if (pendencias.includes('nome')) {
+      this.aguardandoDado = 'nome';
+      const pref = mensagemPrefacio ? `${mensagemPrefacio}\n\n` : '';
       return {
-        resposta: 'Ótimo! Antes de fecharmos o resumo, **como posso te chamar?** (Informe seu nome por favor).',
+        resposta: `${pref}Ótimo! Antes de fecharmos o resumo, **como posso te chamar?** (Informe seu nome por favor).`,
         acoesExecutadas: acoes
       };
     }
 
+    // 2. Falta o Endereço (se for entrega)
     if (pendencias.includes('endereco') && this.carrinho.tipoEntrega === 'entrega') {
+      this.aguardandoDado = 'endereco';
+      const pref = mensagemPrefacio ? `${mensagemPrefacio}\n\n` : '';
       return {
-        resposta: `Maravilha, ${this.checkout.cliente.nome}! Por favor, me informe o **endereço de entrega** completo (Rua, Número e Bairro).`,
+        resposta: `${pref}Maravilha, **${this.checkout.cliente.nome}**! Por favor, me informe o **endereço de entrega** completo (Rua, Número e Bairro). 🛵`,
         acoesExecutadas: acoes
       };
     }
 
+    // 3. Falta a Forma de Pagamento
     if (pendencias.includes('formaPagamento')) {
+      this.aguardandoDado = 'formaPagamento';
+      const pref = mensagemPrefacio ? `${mensagemPrefacio}\n\n` : '';
       return {
-        resposta: `Perfeito! Como você gostaria de realizar o pagamento? Aceitamos:\n• **PIX**\n• **Cartão de Crédito ou Débito** na entrega\n• **Dinheiro** (informe se precisar de troco)`,
+        resposta: `${pref}Perfeito, **${this.checkout.cliente.nome}**! Como você gostaria de realizar o pagamento? Aceitamos:\n• **PIX**\n• **Cartão de Crédito ou Débito** na entrega\n• **Dinheiro** (informe se precisar de troco)`,
         acoesExecutadas: acoes
       };
     }
 
+    // Tudo preenchido! Apresenta o resumo para conferência
+    this.aguardandoDado = null;
     this.checkout.aguardandoConfirmacaoFinal = true;
     const resumo = this.checkout.gerarResumoCompleto();
 
@@ -463,7 +654,8 @@ export class DeterministicAgent {
       linhaCupom = `Cupom aplicado: **${resumo.cupom.codigo}** (-R$ ${resumo.desconto.toFixed(2).replace('.', ',')})\n`;
     }
 
-    const textoResumo = `Fechando seu pedido! 😄\n\n**Resumo do Pedido:**\n${resumo.itensTexto}\n\nSubtotal: R$ ${resumo.subtotal.toFixed(2).replace('.', ',')}\n${linhaCupom}Taxa: R$ ${resumo.taxaEntrega.toFixed(2).replace('.', ',')}\n**Total: R$ ${resumo.total.toFixed(2).replace('.', ',')}**\n\n**Forma de Pagamento:** ${resumo.infoPagamento}\n**${resumo.infoEntrega}**\n\nEstá tudo certinho? **Posso confirmar seu pedido?** (Responda "Sim" para confirmar)`;
+    const pref = mensagemPrefacio ? `${mensagemPrefacio}\n\n` : '';
+    const textoResumo = `${pref}Fechando seu pedido! 😄\n\n**Resumo do Pedido:**\n${resumo.itensTexto}\n\nSubtotal: R$ ${resumo.subtotal.toFixed(2).replace('.', ',')}\n${linhaCupom}Taxa: R$ ${resumo.taxaEntrega.toFixed(2).replace('.', ',')}\n**Total: R$ ${resumo.total.toFixed(2).replace('.', ',')}**\n\n**Forma de Pagamento:** ${resumo.infoPagamento}\n**${resumo.infoEntrega}**\n\nEstá tudo certinho? **Posso confirmar seu pedido?** (Responda "Sim" para confirmar)`;
 
     return {
       resposta: textoResumo,

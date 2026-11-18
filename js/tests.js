@@ -1,7 +1,7 @@
 /**
- * Suíte de Testes Automatizados dos Cenários Obrigatórios (1 a 16)
+ * Suíte de Testes Automatizados dos Cenários Obrigatórios (1 a 17)
  * Valida Vendas, Personalizações, Guardrails de Segurança, Bloqueio de Fuga de Escopo,
- * Cupons Promocionais e Simulação de Disponibilidade Diária.
+ * Cupons Promocionais, Simulação de Disponibilidade Diária e Continuidade de Estado Conversacional.
  */
 
 import { CARDAPIO, consultarCardapio, getDiaAtual, setDiaSimulado, CUPONS_VALIDOS } from './menu.js';
@@ -143,11 +143,9 @@ export function runAllTests() {
     chk.setEndereco('Rua Teste, 100');
     chk.setFormaPagamento('PIX');
 
-    // Tenta finalizar
     const respPrevia = agent.processarMensagem('Quero finalizar o pedido');
     const pediuConfirmacao = chk.aguardandoConfirmacaoFinal === true && !chk.pedidoFinalizado;
 
-    // Confirma explicitamente
     const respFinal = agent.processarMensagem('Sim, pode confirmar');
     const finalizouComSucesso = !!chk.pedidoFinalizado && cart.itens.length === 0;
 
@@ -195,13 +193,9 @@ export function runAllTests() {
     const cart = new Carrinho();
     cart.adicionarItem('marmita-bife-acebolado', 1); // 24.90
     
-    // Cupom válido PRIMEIRACOMPRA: R$ 5,00 OFF
     const resValido = cart.aplicarCupom('PRIMEIRACOMPRA');
-    const subtotal = cart.calcularSubtotal(); // 24.90
-    const desc = cart.calcularDesconto();     // 5.00
-    const totalComFrete = cart.calcularTotal(); // 24.90 - 5.00 + 5.00 = 24.90
-
-    // Tentativa de cupom falso / injeção de desconto
+    const subtotal = cart.calcularSubtotal();
+    const desc = cart.calcularDesconto();
     const resInvalido = cart.aplicarCupom('CUPOM_HACK_GRATIS');
 
     assert('Teste 15 - Validação Estrita de Cupons', resValido.sucesso && desc === 5.00 && !resInvalido.sucesso, `Desconto: R$ ${desc}`);
@@ -209,13 +203,32 @@ export function runAllTests() {
 
   // TESTE 16 - Simulador de Dia da Semana e Disponibilidade Diária
   {
-    setDiaSimulado('terca'); // Terça-feira
+    setDiaSimulado('terca');
     const diaSimulado = getDiaAtual();
     const disponiveisTerca = consultarCardapio('terca');
     const temCarnePanela = disponiveisTerca.some(p => p.id === 'marmita-carne-panela');
     
-    setDiaSimulado(null); // Restaura dia padrão
-    assert('Teste 16 - Simulação de Dia da Semana e Regra de Cardápio', diaSimulado === 'terca' && temCarnePanela, `Dia: ${diaSimulado}, Carne de Panela: ${temCarnePanela}`);
+    setDiaSimulado(null);
+    assert('Teste 16 - Simulação de Dia da Semana e Regra de Cardápio', diaSimulado === 'terca' && temCarnePanela, `Dia: ${diaSimulado}`);
+  }
+
+  // TESTE 17 - Continuidade de Estado Conversacional (Nome isolado capturado sem perder o fio)
+  {
+    const cart = new Carrinho();
+    const chk = new CheckoutManager(cart);
+    const agent = new DeterministicAgent(cart, chk);
+
+    agent.processarMensagem('Quero uma de frango');
+    // Usuário tenta finalizar, o bot pergunta o nome
+    const respPerguntaNome = agent.processarMensagem('Quero fechar');
+    const perguntouNome = respPerguntaNome.resposta.includes('como posso te chamar');
+
+    // Usuário responde apenas com seu primeiro nome isolado (exatamente o caso do usuário!)
+    const respNome = agent.processarMensagem('david');
+    const nomeGravado = chk.cliente.nome === 'David';
+    const continuouFluxo = respNome.resposta.includes('David') && respNome.resposta.includes('endereço');
+
+    assert('Teste 17 - Continuidade de Estado (Nome isolado reconhecido)', perguntouNome && nomeGravado && continuouFluxo, `Nome gravado: "${chk.cliente.nome}"`);
   }
 
   return results;
