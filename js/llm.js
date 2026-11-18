@@ -36,6 +36,43 @@ export class GeminiService {
   }
 
   /**
+   * Valida a chave de API enviando uma requisição de teste mínima.
+   * @param {string} chaveParaTestar
+   * @returns {Promise<{ valido: boolean, mensagem: string }>}
+   */
+  async testarConexao(chaveParaTestar = null) {
+    const key = chaveParaTestar || this.apiKey;
+    if (!key || key.length < 10) {
+      return { valido: false, mensagem: 'Chave não informada ou tamanho inválido.' };
+    }
+
+    const endpoint = `${GEMINI_API_URL}?key=${encodeURIComponent(key)}`;
+    const bodyTeste = {
+      contents: [{ role: 'user', parts: [{ text: 'Olá!' }] }],
+      generationConfig: { maxOutputTokens: 5 }
+    };
+
+    try {
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(bodyTeste)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        const status = response.status;
+        const msg = errorData.error?.message || response.statusText;
+        return { valido: false, mensagem: `Erro na validação (${status}): ${msg}` };
+      }
+
+      return { valido: true, mensagem: 'Chave de API válida e conectada com sucesso!' };
+    } catch (err) {
+      return { valido: false, mensagem: `Falha na requisição: ${err.message}` };
+    }
+  }
+
+  /**
    * Envia a conversa e as definições de ferramentas para o Google Gemini.
    * @param {string} systemInstruction
    * @param {Array} contents Histórico no formato Gemini: [{ role: 'user'|'model', parts: [{ text: ... }] }]

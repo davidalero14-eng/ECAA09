@@ -1,11 +1,10 @@
 /**
- * Marmitaê - Motor Determinístico de Atendimento (Modo Demonstração)
- * Simula um agente conversacional robusto sem necessitar de chave de API externa.
- * Interpreta linguagem natural por regex/regras semânticas, manipula carrinho,
- * gerencia contexto da conversa, personalizações e etapas de checkout.
+ * Marmitaê - Motor Determinístico de Atendimento (Modo Demonstração Aprimorado)
+ * Interpreta linguagem natural com alta cobertura, gerencia contexto, personalizações,
+ * suporte a cupons de desconto, perguntas de cardápio e cards visuais de produtos.
  */
 
-import { CARDAPIO, consultarCardapio, buscarProdutoPorNome, buscarProdutoPorId, getDiaAtual, DIAS_SEMANA_NOMES } from './menu.js';
+import { CARDAPIO, consultarCardapio, buscarProdutoPorNome, buscarProdutoPorId, getDiaAtual, DIAS_SEMANA_NOMES, CUPONS_VALIDOS } from './menu.js';
 import { FORMAS_PAGAMENTO } from './checkout.js';
 
 export class DeterministicAgent {
@@ -20,9 +19,9 @@ export class DeterministicAgent {
   }
 
   /**
-   * Processa a mensagem do cliente e retorna a resposta com ações executadas.
+   * Processa a mensagem do cliente e retorna a resposta com ações executadas e eventuais cards.
    * @param {string} mensagemTexto
-   * @returns {{ resposta: string, acoesExecutadas: Array }}
+   * @returns {{ resposta: string, acoesExecutadas: Array, cards?: Array }}
    */
   processarMensagem(mensagemTexto) {
     const raw = mensagemTexto.trim();
@@ -31,7 +30,7 @@ export class DeterministicAgent {
 
     // 1. CONFIRMAÇÃO FINAL DE PEDIDO
     if (this.checkout.aguardandoConfirmacaoFinal) {
-      if (/^(sim|s|confirmo|pode confirmar|pode fechar|ta certo|tá certo|isso|bora|fechar|ok)$/i.test(texto) ||
+      if (/^(sim|s|confirmo|pode confirmar|pode fechar|ta certo|tá certo|isso|bora|fechar|ok|positivo)$/i.test(texto) ||
           texto.includes('pode confirmar') || texto.includes('pode fechar') || texto.includes('esta certo') || texto.includes('esta correto')) {
         const resultado = this.checkout.confirmarEFinalizar();
         if (resultado.sucesso) {
@@ -50,14 +49,44 @@ export class DeterministicAgent {
       } else if (texto.includes('nao') || texto.includes('espera') || texto.includes('mudar') || texto.includes('cancelar')) {
         this.checkout.aguardandoConfirmacaoFinal = false;
         return {
-          resposta: 'Sem problemas! O que você gostaria de alterar no seu pedido? Posso trocar itens, quantidades ou acompanhamentos.',
+          resposta: 'Sem problemas! O que você gostaria de alterar no seu pedido? Posso trocar itens, quantidades, acompanhamentos, cupom ou forma de pagamento.',
           acoesExecutadas: acoes
         };
       }
     }
 
-    // 2. MUDANÇA DE QUANTIDADE ("na verdade quero 3", "muda para duas", "quero mais uma")
-    const matchMudaQtd = texto.match(/(?:na verdade\s+)?(?:quero|muda|altera|troca|coloca)?\s*(?:para\s+)?(\d+|uma?|duas?|tres|quatro|cinco)\s*(?:marmitas?|unidades?|itens?)?/i);
+    // 2. CUPONS DE DESCONTO ("tem cupom", "aplica cupom", "codigo primeira compra", etc.)
+    if (texto.includes('cupom') || texto.includes('desconto') || texto.includes('promocao') || texto.includes('promoção')) {
+      // Verifica se mencionou um cupom específico
+      let cupomMencionado = null;
+      if (texto.includes('primeiracompra') || texto.includes('primeira compra')) {
+        cupomMencionado = 'PRIMEIRACOMPRA';
+      } else if (texto.includes('marmitae10') || texto.includes('10%')) {
+        cupomMencionado = 'MARMITAE10';
+      } else if (texto.includes('fretegratis') || texto.includes('frete gratis')) {
+        cupomMencionado = 'FRETEGRATIS';
+      }
+
+      if (cupomMencionado) {
+        const resCupom = this.carrinho.aplicarCupom(cupomMencionado);
+        if (resCupom.sucesso) {
+          acoes.push({ tipo: 'aplicar_cupom', cupom: resCupom.cupom });
+          const totalAtual = this.carrinho.calcularTotal();
+          return {
+            resposta: `🎉 Oba! Cupom **${resCupom.cupom.codigo}** aplicado com sucesso!\nBenefício: **${resCupom.cupom.descricao}**.\n\nTotal atualizado do seu pedido: **R$ ${totalAtual.toFixed(2).replace('.', ',')}**. Podemos continuar? 😄`,
+            acoesExecutadas: acoes
+          };
+        }
+      } else {
+        // Explicar cupons disponíveis
+        return {
+          resposta: `Temos ótimos cupons disponíveis hoje! 🎟️\n\n• **PRIMEIRACOMPRA**: R$ 5,00 de desconto no seu pedido!\n• **MARMITAE10**: 10% de desconto no total dos pratos!\n• **FRETEGRATIS**: Entrega grátis na sua casa!\n\nPara aplicar, basta me dizer: *"Aplica o cupom PRIMEIRACOMPRA"* ou o código que preferir! 😊`,
+          acoesExecutadas: acoes
+        };
+      }
+    }
+
+    // 3. MUDANÇA DE QUANTIDADE ("na verdade quero 3", "muda para duas", "quero mais uma")
     const querMaisUma = texto.includes('mais uma') || texto.includes('quero outra') || texto.includes('adiciona mais um');
     
     if (querMaisUma && this.ultimoItemMencionadoId) {
@@ -66,7 +95,7 @@ export class DeterministicAgent {
         this.carrinho.incrementarQuantidade(this.ultimoItemMencionadoId, 1);
         acoes.push({ tipo: 'adicionar_item', produtoId: prod.id });
         return {
-          resposta: `Adicionei mais uma marmita de **${prod.nome}** ao seu carrinho! 🛍️\n\nQuer escolher uma bebida para acompanhar ou gostaria de ver o valor atual?`,
+          resposta: `Adicionei mais uma unidade de **${prod.nome}** ao seu carrinho! 🛍️\n\nQuer escolher uma bebida bem geladinha para acompanhar ou gostaria de ver o valor atual?`,
           acoesExecutadas: acoes
         };
       }
@@ -88,7 +117,7 @@ export class DeterministicAgent {
       };
     }
 
-    // 3. REMOÇÃO DE ITEM ("cancela a bebida", "tira o refrigerante", "remove o pudim")
+    // 4. REMOÇÃO DE ITEM ("cancela a bebida", "tira o refrigerante", "remove o pudim")
     if (texto.includes('cancela') || texto.includes('tira') || texto.includes('remove') || texto.includes('exclui')) {
       if (texto.includes('bebida') || texto.includes('refri') || texto.includes('coca') || texto.includes('suco') || texto.includes('agua')) {
         const itemBebida = this.carrinho.itens.find(i => i.categoria === 'bebidas');
@@ -114,7 +143,7 @@ export class DeterministicAgent {
       }
     }
 
-    // 4. CONSULTA DE CARDÁPIO GERAL OU DO DIA
+    // 5. CONSULTA DE CARDÁPIO GERAL OU DO DIA (com cards visuais)
     if (
       texto.includes('cardapio') || texto.includes('opcoes') || texto.includes('opções') ||
       texto.includes('o que tem') || texto.includes('quais sao os pratos') || texto.includes('marmitas de hoje')
@@ -123,37 +152,33 @@ export class DeterministicAgent {
       const disponiveisHoje = consultarCardapio(diaAtual, 'marmitas');
       const nomeDia = DIAS_SEMANA_NOMES[diaAtual] || 'Hoje';
 
-      let textoResp = `Hoje é **${nomeDia}** e temos essas delícias fresquinhas saindo no Marmitaê:\n\n`;
-      disponiveisHoje.forEach(p => {
-        textoResp += `🍛 **${p.nome}** - R$ ${p.preco.toFixed(2).replace('.', ',')}\n   ${p.descricao}\n`;
-      });
-      textoResp += `\nQual dessas te deu mais água na boca? Se preferir, você também pode personalizar ingredientes e acompanhamentos! 😄`;
-      return { resposta: textoResp, acoesExecutadas: acoes };
+      return {
+        resposta: `Hoje é **${nomeDia}** e preparamos estas opções fresquinhas para você no Marmitaê! Você pode clicar em **Pedir este** abaixo ou me dizer com suas próprias palavras:`,
+        acoesExecutadas: acoes,
+        cards: disponiveisHoje
+      };
     }
 
-    // 5. CONSULTA DE BEBIDAS OU SOBREMESAS
+    // 6. CONSULTA DE BEBIDAS OU SOBREMESAS (com cards visuais)
     if (texto.includes('bebida') && !texto.includes('adiciona') && !texto.includes('coloca') && !texto.includes('quero')) {
       const bebidas = CARDAPIO.filter(p => p.categoria === 'bebidas');
-      let resp = `Temos essas bebidas bem geladinhas para acompanhar sua marmita:\n\n`;
-      bebidas.forEach(b => {
-        resp += `🥤 **${b.nome}** - R$ ${b.preco.toFixed(2).replace('.', ',')} (${b.descricao})\n`;
-      });
-      resp += `\nGostaria de incluir alguma no seu pedido?`;
-      return { resposta: resp, acoesExecutadas: acoes };
+      return {
+        resposta: `Temos essas bebidas bem geladinhas para acompanhar sua refeição:`,
+        acoesExecutadas: acoes,
+        cards: bebidas
+      };
     }
 
     if (texto.includes('sobremesa') && !texto.includes('adiciona') && !texto.includes('coloca') && !texto.includes('quero')) {
       const doces = CARDAPIO.filter(p => p.categoria === 'sobremesas');
-      let resp = `Para adoçar o seu dia, temos sobremesas caseiras deliciosas:\n\n`;
-      doces.forEach(d => {
-        resp += `🍮 **${d.nome}** - R$ ${d.preco.toFixed(2).replace('.', ',')} (${d.descricao})\n`;
-      });
-      resp += `\nQual você vai querer?`;
-      return { resposta: resp, acoesExecutadas: acoes };
+      return {
+        resposta: `Para adoçar seu dia com muito sabor, temos estas sobremesas caseiras:`,
+        acoesExecutadas: acoes,
+        cards: doces
+      };
     }
 
-    // 6. PERSONALIZAÇÃO DE ITEM JÁ EXISTENTE OU RECENTE
-    // Ex: "troca a batata por pure", "sem cebola", "bem passado", "tira a cebola"
+    // 7. PERSONALIZAÇÃO DE ITEM JÁ EXISTENTE OU RECENTE
     const ehPersonalizacaoIsolada = 
       (texto.includes('troca') || texto.includes('sem ') || texto.includes('tira ') || texto.includes('com ') || texto.includes('passado') || texto.includes('pure no lugar')) &&
       !texto.includes('marmita de') && !texto.includes('quero uma');
@@ -164,28 +189,26 @@ export class DeterministicAgent {
         this.carrinho.personalizarItem(null, personalizacoesExtraidas);
         acoes.push({ tipo: 'personalizar_item', personalizacoes: personalizacoesExtraidas });
         return {
-          resposta: `Perfeito! Anotei a personalização no seu pedido: **${personalizacoesExtraidas.join(', ')}**. 👍\n\nDeseja adicionar uma bebida ou sobremesa para acompanhar?`,
+          resposta: `Perfeito! Anotei a personalização no seu prato: **${personalizacoesExtraidas.join(', ')}**. 👍\n\nDeseja adicionar uma bebida ou sobremesa para acompanhar?`,
           acoesExecutadas: acoes
         };
       }
     }
 
-    // 7. INCLUSÃO DE ITENS (Marmitas, Bebidas, Sobremesas)
-    // Detecta quantidade ("duas de bife", "uma de frango", "me ve uma de carne e outra de frango")
+    // 8. INCLUSÃO DE ITENS (Marmitas, Bebidas, Sobremesas)
     const pedidosDetectados = this.detectarMultiplosPedidos(raw);
     if (pedidosDetectados.length > 0) {
       let respostasPartes = [];
       for (const itemPedido of pedidosDetectados) {
-        // Verifica disponibilidade do dia
         const diaAtual = getDiaAtual();
         const estaDisponivelHoje = itemPedido.produto.diasDisponiveis.includes(diaAtual);
 
         if (!estaDisponivelHoje) {
           const alternativos = consultarCardapio(diaAtual, itemPedido.produto.categoria);
-          const nomesAlt = alternativos.map(a => a.nome).join(', ');
           return {
-            resposta: `O prato **${itemPedido.produto.nome}** é especial de outros dias e não está disponível hoje (${DIAS_SEMANA_NOMES[diaAtual]}). 😔\n\nMas hoje temos opções maravilhosas como: **${nomesAlt}**!\nQual delas você prefere?`,
-            acoesExecutadas: acoes
+            resposta: `O prato **${itemPedido.produto.nome}** é especial de outros dias e não está disponível hoje (${DIAS_SEMANA_NOMES[diaAtual]}). 😔\n\nMas hoje temos pratos incríveis disponíveis! Veja as opções abaixo:`,
+            acoesExecutadas: acoes,
+            cards: alternativos
           };
         }
 
@@ -202,13 +225,12 @@ export class DeterministicAgent {
         respostasPartes.push(`${itemPedido.quantidade}x **${itemPedido.produto.nome}**${detalhePers}`);
       }
 
-      // Sugestão de venda cruzada inteligente (se não pediu bebida, sugere; se não pediu sobremesa, sugere)
       const temBebida = this.carrinho.itens.some(i => i.categoria === 'bebidas');
       let sugestao = '';
       if (!temBebida) {
         sugestao = `\n\nQue tal um **Suco natural** geladinho (R$ 7,00) ou um **Refrigerante lata** (R$ 6,00) para acompanhar?`;
       } else {
-        sugestao = `\n\nPara fechar com chave de ouro, gostaria de um **Pudim** caseiro (R$ 7,00) de sobremesa?`;
+        sugestao = `\n\nPara fechar com chave de ouro, gostaria de um **Pudim** tradicional (R$ 7,00) de sobremesa?`;
       }
 
       return {
@@ -217,8 +239,8 @@ export class DeterministicAgent {
       };
     }
 
-    // 8. TIPO DE ENTREGA / RETIRADA
-    if (texto.includes('retirar') || texto.includes('retirada') || texto.includes('buscar no local') || texto.includes('passo ai')) {
+    // 9. TIPO DE ENTREGA / RETIRADA
+    if (texto.includes('retirar') || texto.includes('retirada') || texto.includes('buscar no local') || texto.includes('passo ai') || texto.includes('pegar ai')) {
       this.carrinho.definirTipoEntrega('retirada');
       acoes.push({ tipo: 'definir_entrega', tipo: 'retirada' });
       return {
@@ -230,19 +252,18 @@ export class DeterministicAgent {
     if (texto.includes('entrega') || texto.includes('entregar') || texto.includes('rua') || texto.includes('av.') || texto.includes('avenida') || texto.includes('bairro')) {
       this.carrinho.definirTipoEntrega('entrega');
       this.checkout.setEndereco(raw);
-      // Extrai nome se fornecido
       this.extrairNomeCliente(raw);
       acoes.push({ tipo: 'definir_entrega', tipo: 'entrega' });
 
       if (!this.checkout.cliente.formaPagamento) {
         return {
-          resposta: `Anotado o endereço para entrega! 🛵 (Taxa de entrega: R$ 5,00).\n\nQual será a forma de pagamento? Aceitamos **PIX**, **Cartão de Crédito/Débito** na entrega ou **Dinheiro** (se precisar de troco, me avise o valor).`,
+          resposta: `Anotado o endereço para entrega! 🛵 (Taxa de entrega fixa: R$ 5,00).\n\nQual será a forma de pagamento? Aceitamos **PIX**, **Cartão de Crédito/Débito** na entrega ou **Dinheiro** (se precisar de troco, me informe para quanto).`,
           acoesExecutadas: acoes
         };
       }
     }
 
-    // 9. FORMA DE PAGAMENTO ("vou pagar no pix", "cartao de credito", "dinheiro, troco pra 50")
+    // 10. FORMA DE PAGAMENTO ("vou pagar no pix", "cartao de credito", "dinheiro, troco pra 50")
     if (texto.includes('pix') || texto.includes('dinheiro') || texto.includes('credito') || texto.includes('debito') || texto.includes('cartao')) {
       let troco = null;
       const matchTroco = texto.match(/troco\s*(?:para|pra)?\s*(?:r\$)?\s*(\d+)/i);
@@ -258,24 +279,22 @@ export class DeterministicAgent {
 
       acoes.push({ tipo: 'definir_pagamento', forma: this.checkout.cliente.formaPagamento });
 
-      // Se ainda não tiver endereço
       if (this.carrinho.tipoEntrega === 'entrega' && !this.checkout.cliente.endereco.rua) {
         return {
-          resposta: `Forma de pagamento registrada como **${this.checkout.cliente.formaPagamento}**! 👍\n\nAgora só preciso do seu **nome completo** e **endereço de entrega** (rua, número e bairro) para calcularmos tudo.`,
+          resposta: `Forma de pagamento registrada como **${this.checkout.cliente.formaPagamento}**! 👍\n\nAgora só preciso do seu **nome** e **endereço de entrega** completo (rua, número e bairro) para calcularmos tudo.`,
           acoesExecutadas: acoes
         };
       }
 
-      // Se já tiver tudo, apresenta o resumo prévio
       return this.gerarPromptResumoConfirmacao(acoes);
     }
 
-    // 10. CONSULTA DE VALOR / TOTAL / CARRINHO ("quanto ficou", "qual o total", "ver meu carrinho")
+    // 11. CONSULTA DE VALOR / TOTAL / CARRINHO
     if (texto.includes('quanto') || texto.includes('total') || texto.includes('carrinho') || texto.includes('valor')) {
       const estado = this.carrinho.obterEstado();
       if (estado.vazio) {
         return {
-          resposta: 'Seu carrinho ainda está vazio! Que tal darmos uma olhada no cardápio de hoje para escolher uma refeição deliciosa? 🍲',
+          resposta: 'Seu carrinho ainda está vazio! Que tal darmos uma olhada nas nossas marmitas de hoje para escolher uma refeição deliciosa? 🍲',
           acoesExecutadas: acoes
         };
       }
@@ -287,29 +306,26 @@ export class DeterministicAgent {
       };
     }
 
-    // 11. FINALIZAÇÃO / CHECKOUT ("quero finalizar", "fecha o pedido", "pode mandar")
+    // 12. FINALIZAÇÃO / CHECKOUT
     if (texto.includes('finalizar') || texto.includes('fechar') || texto.includes('concluir') || texto.includes('tudo certo')) {
       return this.gerarPromptResumoConfirmacao(acoes);
     }
 
-    // 12. CUMPRIMENTOS INICIAIS
+    // 13. CUMPRIMENTOS INICIAIS
     if (texto.includes('ola') || texto.includes('oi') || texto.includes('boa tarde') || texto.includes('bom dia') || texto.includes('boa noite')) {
       return {
-        resposta: 'Olá! Seja muito bem-vindo ao Marmitaê! 😄 Hoje temos pratos deliciosos feitos com ingredientes frescos e tempero caseiro.\n\nVocê prefere opções com frango, carne bovina ou gostaria de conhecer nosso cardápio completo de hoje?',
+        resposta: 'Olá! Seja muito bem-vindo ao **Marmitaê**! 😄 Hoje temos pratos deliciosos feitos com tempero caseiro e ingredientes selecionados.\n\nVocê prefere opções com frango, carne bovina ou gostaria de conhecer nosso cardápio completo de hoje?',
         acoesExecutadas: acoes
       };
     }
 
-    // Resposta padrão contextualizada
+    // Resposta padrão comercial
     return {
-      resposta: 'Entendido! Posso te ajudar a escolher uma marmita saborosa, adicionar bebidas ou personalizar seu prato. Deseja ver as opções de hoje ou adicionar algum item ao carrinho? 😊',
+      resposta: 'Entendido! Como posso te atender agora? Posso te apresentar o cardápio do dia, adicionar bebidas, personalizar marmitas, aplicar cupons ou fechar seu pedido! 😊',
       acoesExecutadas: acoes
     };
   }
 
-  /**
-   * Extrai nome de clientes de frases naturais
-   */
   extrairNomeCliente(texto) {
     const match = texto.match(/(?:meu nome [eé]|sou o|sou a|me chamo|nome:\s*)\s*([a-zA-ZÀ-ÿ]+)/i);
     if (match) {
@@ -317,15 +333,10 @@ export class DeterministicAgent {
     }
   }
 
-  /**
-   * Identifica pedidos múltiplos ou individuais com suas personalizações
-   */
   detectarMultiplosPedidos(texto) {
     const pedidos = [];
     const textoNorm = texto.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
-    // Padrões específicos de múltiplos pratos na mesma mensagem
-    // Ex: "uma de carne e outra de frango", "duas marmitas de bife"
     if (textoNorm.includes('uma de carne') && textoNorm.includes('outra de frango')) {
       const bife = CARDAPIO.find(p => p.id === 'marmita-bife-acebolado');
       const frango = CARDAPIO.find(p => p.id === 'marmita-frango-grelhado');
@@ -334,7 +345,6 @@ export class DeterministicAgent {
       return pedidos;
     }
 
-    // Procura por produtos individuais
     for (const prod of CARDAPIO) {
       let encontrou = false;
 
@@ -391,9 +401,6 @@ export class DeterministicAgent {
     return pedidos;
   }
 
-  /**
-   * Extrai preferências de preparo e substituições
-   */
   extrairPersonalizacoes(texto) {
     const list = [];
     const t = texto.toLowerCase();
@@ -416,9 +423,6 @@ export class DeterministicAgent {
     return list;
   }
 
-  /**
-   * Gera a mensagem do resumo e solicita a confirmação explícita.
-   */
   gerarPromptResumoConfirmacao(acoes) {
     const estado = this.carrinho.obterEstado();
     if (estado.vazio) {
@@ -430,7 +434,6 @@ export class DeterministicAgent {
 
     const pendencias = this.checkout.obterPendencias();
 
-    // Se faltar dados vitais, solicita um de cada vez sem sobrecarregar
     if (pendencias.includes('nome')) {
       return {
         resposta: 'Ótimo! Antes de fecharmos o resumo, **como posso te chamar?** (Informe seu nome por favor).',
@@ -452,11 +455,15 @@ export class DeterministicAgent {
       };
     }
 
-    // Tudo pronto para conferência!
     this.checkout.aguardandoConfirmacaoFinal = true;
     const resumo = this.checkout.gerarResumoCompleto();
 
-    const textoResumo = `Fechando seu pedido! 😄\n\n**Resumo do Pedido:**\n${resumo.itensTexto}\n\nSubtotal: R$ ${resumo.subtotal.toFixed(2).replace('.', ',')}\nTaxa: R$ ${resumo.taxaEntrega.toFixed(2).replace('.', ',')}\n**Total: R$ ${resumo.total.toFixed(2).replace('.', ',')}**\n\n**Forma de Pagamento:** ${resumo.infoPagamento}\n**${resumo.infoEntrega}**\n\nEstá tudo certinho? **Posso confirmar seu pedido?** (Responda "Sim" para confirmar)`;
+    let linhaCupom = '';
+    if (resumo.cupom) {
+      linhaCupom = `Cupom aplicado: **${resumo.cupom.codigo}** (-R$ ${resumo.desconto.toFixed(2).replace('.', ',')})\n`;
+    }
+
+    const textoResumo = `Fechando seu pedido! 😄\n\n**Resumo do Pedido:**\n${resumo.itensTexto}\n\nSubtotal: R$ ${resumo.subtotal.toFixed(2).replace('.', ',')}\n${linhaCupom}Taxa: R$ ${resumo.taxaEntrega.toFixed(2).replace('.', ',')}\n**Total: R$ ${resumo.total.toFixed(2).replace('.', ',')}**\n\n**Forma de Pagamento:** ${resumo.infoPagamento}\n**${resumo.infoEntrega}**\n\nEstá tudo certinho? **Posso confirmar seu pedido?** (Responda "Sim" para confirmar)`;
 
     return {
       resposta: textoResumo,

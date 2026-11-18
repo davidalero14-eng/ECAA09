@@ -35,6 +35,39 @@
           <span>Aberto agora</span>
         </div>
 
+        <!-- Simulador de Dia da Semana (Útil para testes e auditoria de disponibilidade) -->
+        <div class="dia-simulador-container" title="Simular dia da semana para testar cardápio diário">
+          <i class="fa-solid fa-calendar-day text-primary"></i>
+          <label for="select-dia-simulado">Dia:</label>
+          <select id="select-dia-simulado" class="dia-simulador-select">
+            <option value="auto">Hoje (Automático)</option>
+            <option value="segunda">Segunda-feira</option>
+            <option value="terca">Terça-feira</option>
+            <option value="quarta">Quarta-feira</option>
+            <option value="quinta">Quinta-feira</option>
+            <option value="sexta">Sexta-feira</option>
+            <option value="sabado">Sábado</option>
+            <option value="domingo">Domingo (Fechado)</option>
+          </select>
+        </div>
+
+        <!-- Botão Catálogo Completo do Cardápio -->
+        <button id="btn-ver-cardapio-modal" class="btn-header" title="Ver cardápio completo ilustrado">
+          <i class="fa-solid fa-book-open"></i>
+          <span>Cardápio</span>
+        </button>
+
+        <!-- Botão Leitura em Voz Alta (Text-to-Speech) -->
+        <button id="btn-toggle-voz" class="btn-header" title="Ativar/Desativar leitura de voz (Text-to-Speech)">
+          <i id="icone-voz" class="fa-solid fa-comment-dots"></i>
+          <span>Voz</span>
+        </button>
+
+        <!-- Botão de Efeitos Sonoros On/Off -->
+        <button id="btn-toggle-som" class="btn-header" title="Alternar efeitos sonoros">
+          <i id="icone-som" class="fa-solid fa-volume-high"></i>
+        </button>
+
         <!-- Indicador do Modo de Operação (Demo / Gemini) -->
         <button id="btn-status-modo" class="btn-header" title="Alternar ou configurar modo de IA">
           <i id="icone-modo" class="fa-solid fa-cube text-primary"></i>
@@ -44,10 +77,10 @@
         <!-- Botão Abrir Modal de Configurações da API -->
         <button id="btn-abrir-config" class="btn-header" title="Configurar Chave da API Gemini">
           <i class="fa-solid fa-gear"></i>
-          <span>Configuração</span>
+          <span>API Gemini</span>
         </button>
 
-        <!-- Botão de Carrinho (Apenas Mobile/Tablet ou atalho) -->
+        <!-- Botão de Carrinho (Mobile/Tablet ou atalho rápido) -->
         <button id="btn-toggle-carrinho" class="btn-header" title="Ver Carrinho">
           <i class="fa-solid fa-bag-shopping"></i>
           <span class="cart-toggle-badge" id="badge-qtd-carrinho">0</span>
@@ -69,8 +102,9 @@
       
       <!-- Banner Informativo Superior do Chat -->
       <div class="chat-banner-info">
-        <span><i class="fa-solid fa-clock"></i> Horário de entregas: 11:00 às 15:00</span>
-        <span><i class="fa-solid fa-motorcycle"></i> Taxa de entrega fixa: R$ 5,00 (ou retirada grátis)</span>
+        <span><i class="fa-solid fa-clock"></i> Entregas das 11h às 15h</span>
+        <span><i class="fa-solid fa-tags"></i> Cupons ativos: <strong>PRIMEIRACOMPRA</strong> (R$ 5 OFF) | <strong>MARMITAE10</strong></span>
+        <span><i class="fa-solid fa-motorcycle"></i> Frete fixo: R$ 5,00 (ou balcão grátis)</span>
       </div>
 
       <!-- Container das Mensagens -->
@@ -88,10 +122,11 @@
 
       <!-- Sugestões Rápidas Clicáveis -->
       <div class="quick-suggestions" id="quick-suggestions">
-        <button class="chip-btn" data-msg="Ver cardápio de hoje">📋 Ver cardápio de hoje</button>
-        <button class="chip-btn" data-msg="Quero uma marmita de frango grelhado">🍗 Marmita de Frango</button>
+        <button class="chip-btn" data-msg="Ver cardápio de hoje">📋 Cardápio de hoje</button>
+        <button class="chip-btn" data-msg="Quero uma marmita de frango grelhado">🍗 Marmita Frango</button>
         <button class="chip-btn" data-msg="Quero um bife acebolado sem cebola">🥩 Bife sem cebola</button>
-        <button class="chip-btn" data-msg="Quais são as bebidas?">🥤 Quais são as bebidas?</button>
+        <button class="chip-btn" data-msg="Tem algum cupom de desconto?">🎟️ Tem cupom?</button>
+        <button class="chip-btn" data-msg="Quais são as bebidas?">🥤 Ver bebidas</button>
         <button class="chip-btn" data-msg="Ver meu carrinho">🛒 Ver meu carrinho</button>
       </div>
 
@@ -102,7 +137,7 @@
             type="text" 
             id="chat-input" 
             class="chat-input" 
-            placeholder="Digite seu pedido, dúvidas ou personalizações..." 
+            placeholder="Digite seu pedido, personalizações ou dúvidas..." 
             maxlength="400"
             required
           />
@@ -136,11 +171,27 @@
           <!-- Renderizado via cart.js / app.js -->
         </div>
 
-        <!-- Rodapé do Carrinho com Subtotal, Frete e Botão de Ação -->
+        <!-- Área de Inserção de Cupom -->
+        <div class="cart-coupon-area" id="cart-coupon-area">
+          <div id="coupon-input-group" class="coupon-form">
+            <input type="text" id="input-cupom" class="input-coupon" placeholder="CUPOM (Ex: PRIMEIRACOMPRA)" maxlength="20" />
+            <button type="button" id="btn-aplicar-cupom" class="btn-apply-coupon">Aplicar</button>
+          </div>
+          <div id="coupon-applied-group" class="applied-coupon-badge oculto">
+            <span id="coupon-applied-text">Cupom: PRIMEIRACOMPRA (-R$ 5,00)</span>
+            <button type="button" id="btn-remover-cupom" class="btn-remove-coupon" title="Remover cupom">&times;</button>
+          </div>
+        </div>
+
+        <!-- Rodapé do Carrinho com Subtotal, Descontos, Frete e Botão de Ação -->
         <div class="cart-footer">
           <div class="summary-row">
             <span>Subtotal</span>
             <span id="cart-subtotal">R$ 0,00</span>
+          </div>
+          <div class="summary-row summary-discount oculto" id="cart-row-desconto">
+            <span>Desconto (Cupom)</span>
+            <span id="cart-desconto">- R$ 0,00</span>
           </div>
           <div class="summary-row">
             <span id="cart-label-entrega">Taxa de entrega</span>
@@ -173,7 +224,7 @@
       <div class="modal-body">
         <div class="info-box">
           <i class="fa-solid fa-shield-halved"></i>
-          <strong>Privacidade e Segurança:</strong> Como esta aplicação roda exclusivamente no seu navegador (client-side), sua chave é salva apenas na memória temporária da sessão (<code>sessionStorage</code>) e nunca é enviada a nenhum servidor além da API oficial do Google Gemini.
+          <strong>Privacidade e Segurança Client-Side:</strong> Esta aplicação roda 100% no seu navegador. Sua chave é gravada estritamente na memória temporária da sessão (<code>sessionStorage</code>) e é utilizada apenas em chamadas diretas à API do Google Gemini.
         </div>
 
         <div class="form-group">
@@ -184,7 +235,7 @@
             class="input-text" 
             placeholder="AIzaSy..." 
           />
-          <small class="text-muted">Obtenha gratuitamente em <a href="https://aistudio.google.com/" target="_blank" rel="noopener">Google AI Studio</a>.</small>
+          <small class="text-muted">Obtenha sua chave gratuitamente em <a href="https://aistudio.google.com/" target="_blank" rel="noopener">Google AI Studio</a>.</small>
         </div>
 
         <div class="form-group">
@@ -200,15 +251,105 @@
             </label>
           </div>
         </div>
+
+        <div id="status-teste-conexao" style="font-size: 0.85rem; font-weight: 600; padding: 0.4rem 0;"></div>
       </div>
 
       <div class="modal-footer">
+        <button type="button" class="btn-info" id="btn-testar-conexao">Testar Conexão</button>
         <button type="button" class="btn-danger" id="btn-limpar-chave">Limpar Chave</button>
         <button type="button" class="btn-secondary" id="btn-cancelar-modal">Cancelar</button>
         <button type="button" class="btn-primary" id="btn-salvar-chave">Salvar Configuração</button>
       </div>
     </div>
   </div>
+
+  <!-- MODAL CARDÁPIO COMPLETO INTERATIVO -->
+  <div class="modal-overlay oculto" id="modal-cardapio">
+    <div class="modal-card modal-cardapio-card">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-utensils text-primary"></i> Cardápio Oficial Marmitaê</h3>
+        <button class="btn-close-modal" id="btn-fechar-modal-cardapio">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="menu-filter-bar">
+          <div class="menu-tabs">
+            <button class="menu-tab-btn ativo" data-categoria="todos">Todos</button>
+            <button class="menu-tab-btn" data-categoria="marmitas">Marmitas</button>
+            <button class="menu-tab-btn" data-categoria="bebidas">Bebidas</button>
+            <button class="menu-tab-btn" data-categoria="sobremesas">Sobremesas</button>
+          </div>
+          <div class="menu-search-box">
+            <input type="text" id="input-busca-cardapio" class="input-text" placeholder="Buscar prato ou ingrediente..." />
+          </div>
+        </div>
+
+        <div class="menu-items-grid" id="modal-menu-grid">
+          <!-- Renderizado via app.js -->
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" id="btn-fechar-modal-cardapio-rodape">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL RASTREADOR DE PEDIDO EM TEMPO REAL -->
+  <div class="modal-overlay oculto" id="modal-tracker">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-route text-primary"></i> Acompanhamento do Pedido</h3>
+        <button class="btn-close-modal" id="btn-fechar-modal-tracker">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <div style="text-align: center; margin-bottom: 0.5rem;">
+          <h4 id="tracker-numero-pedido" style="font-size: 1.25rem; color: var(--primary-dark);">#MAR-1234</h4>
+          <p id="tracker-cliente-info" style="font-size: 0.85rem; color: var(--text-muted);">Cliente: Maria Silva</p>
+        </div>
+
+        <div class="tracker-stepper">
+          <div class="tracker-progress-bar" id="tracker-progress-line" style="width: 25%;"></div>
+          
+          <div class="tracker-step concluido" id="step-1">
+            <div class="tracker-step-icon"><i class="fa-solid fa-receipt"></i></div>
+            <span class="tracker-step-label">Recebido</span>
+          </div>
+          
+          <div class="tracker-step ativo" id="step-2">
+            <div class="tracker-step-icon"><i class="fa-solid fa-fire-burner"></i></div>
+            <span class="tracker-step-label">Na Cozinha</span>
+          </div>
+          
+          <div class="tracker-step" id="step-3">
+            <div class="tracker-step-icon"><i class="fa-solid fa-motorcycle"></i></div>
+            <span class="tracker-step-label">A Caminho</span>
+          </div>
+          
+          <div class="tracker-step" id="step-4">
+            <div class="tracker-step-icon"><i class="fa-solid fa-circle-check"></i></div>
+            <span class="tracker-step-label">Entregue</span>
+          </div>
+        </div>
+
+        <div class="info-box" id="tracker-status-mensagem">
+          👨‍🍳 <strong>Seu pedido está sendo preparado com muito carinho!</strong> Os acompanhamentos e marmitas estão fresquinhos na chapa.
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn-info" id="btn-avancar-etapa-tracker" title="Avançar etapa para demonstração acadêmica">
+          <i class="fa-solid fa-forward-step"></i> Simular Avanço de Etapa
+        </button>
+        <button type="button" class="btn-secondary" id="btn-fechar-modal-tracker-rodape">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTAINER DE TOASTS FLUTUANTES -->
+  <div class="toast-container" id="toast-container"></div>
 
   <!-- SCRIPT PRINCIPAL ES6 MODULE -->
   <script type="module" src="js/app.js"></script>

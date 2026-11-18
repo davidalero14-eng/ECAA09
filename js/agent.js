@@ -19,9 +19,8 @@ export class AgentManager {
     this.gemini = new GeminiService();
     this.deterministicAgent = new DeterministicAgent(carrinho, checkout);
 
-    // Histórico de mensagens no padrão Gemini: { role: 'user'|'model', parts: [{ text: ... }] }
     this.historico = [];
-    this.modoAtual = this.gemini.temApiKey() ? 'llm' : 'demo'; // 'llm' ou 'demo'
+    this.modoAtual = this.gemini.temApiKey() ? 'llm' : 'demo';
   }
 
   setModo(modo) {
@@ -43,10 +42,10 @@ export class AgentManager {
   /**
    * Processa a mensagem do usuário com todas as camadas de proteção e inteligência.
    * @param {string} mensagemTexto
-   * @returns {Promise<{ resposta: string, acoesExecutadas: Array, modoUsado: string }>}
+   * @returns {Promise<{ resposta: string, acoesExecutadas: Array, modoUsado: string, cards?: Array }>}
    */
   async processarMensagem(mensagemTexto) {
-    // CAMADA 1: GUARDRAILS DE ENTRADA
+    // CAMADA 1: GUARDRAILS DE ENTRADA (Filtra Injection, Jailbreak, Rate Limit, Fuga de Escopo e Dados Sensíveis)
     const validacaoEntrada = Guardrails.validarEntradaUsuario(mensagemTexto);
     if (!validacaoEntrada.seguro) {
       return {
@@ -62,19 +61,18 @@ export class AgentManager {
       return {
         resposta: resultadoDemo.resposta,
         acoesExecutadas: resultadoDemo.acoesExecutadas,
-        modoUsado: 'demo'
+        modoUsado: 'demo',
+        cards: resultadoDemo.cards || null
       };
     }
 
     // MODO GEMINI (LLM com Chamada de Ferramentas / Function Calling)
     try {
-      // Adiciona mensagem do usuário ao histórico Gemini
       this.historico.push({
         role: 'user',
         parts: [{ text: mensagemTexto }]
       });
 
-      // Contexto do carrinho injetado no prompt de sistema
       const estadoCarrinho = this.carrinho.obterEstado();
       const pendencias = this.checkout.obterPendencias();
       const contextoDinamico = `
@@ -83,14 +81,13 @@ ${SYSTEM_PROMPT_MARMITAE}
 SITUAÇÃO ATUAL DO PEDIDO:
 - Dia da semana: ${getDiaAtual()}
 - Itens no carrinho: ${JSON.stringify(estadoCarrinho.itens)}
-- Subtotal: R$ ${estadoCarrinho.subtotal.toFixed(2)} | Frete: R$ ${estadoCarrinho.taxaEntrega.toFixed(2)} | Total: R$ ${estadoCarrinho.total.toFixed(2)}
+- Subtotal: R$ ${estadoCarrinho.subtotal.toFixed(2)} | Cupom: ${estadoCarrinho.cupom ? estadoCarrinho.cupom.codigo : 'Nenhum'} | Desconto: R$ ${estadoCarrinho.desconto.toFixed(2)} | Frete: R$ ${estadoCarrinho.taxaEntrega.toFixed(2)} | Total: R$ ${estadoCarrinho.total.toFixed(2)}
 - Tipo de entrega: ${this.carrinho.tipoEntrega}
 - Cliente: Nome="${this.checkout.cliente.nome || ''}", Endereço="${this.checkout.cliente.endereco.rua || ''}", Pagamento="${this.checkout.cliente.formaPagamento || ''}"
 - Informações pendentes para fechar: ${pendencias.join(', ') || 'nenhuma (pronto para confirmação)'}
 - Aguardando confirmação final do cliente: ${this.checkout.aguardandoConfirmacaoFinal ? 'SIM' : 'NÃO'}
 `;
 
-      // Chamada HTTP ao Google Gemini
       const resultadoLLM = await this.gemini.gerarResposta(
         contextoDinamico,
         this.historico,
@@ -98,24 +95,25 @@ SITUAÇÃO ATUAL DO PEDIDO:
       );
 
       const acoesExecutadas = [];
+      let cardsRetornados = null;
 
-      // Processa chamadas de função retornadas pelo modelo
       if (resultadoLLM.toolCalls && resultadoLLM.toolCalls.length > 0) {
         for (const tc of resultadoLLM.toolCalls) {
           const resultadoAcao = this.executarAcaoValidada(tc.name, tc.args);
           acoesExecutadas.push({ nome: tc.name, args: tc.args, resultado: resultadoAcao });
+
+          if (tc.name === 'consultar_cardapio' && resultadoAcao.itensDisponiveis) {
+            cardsRetornados = resultadoAcao.itensDisponiveis;
+          }
         }
       }
 
-      // Sanitiza resposta textual para evitar vazamentos
       let respostaFinal = Guardrails.sanitizarRespostaLLM(resultadoLLM.respostaTexto);
 
-      // Se o modelo só executou ferramenta e não deu texto explicativo, gera resposta amigável
       if (!respostaFinal && acoesExecutadas.length > 0) {
         respostaFinal = this.gerarFeedbackParaAcoes(acoesExecutadas);
       }
 
-      // Salva resposta do modelo no histórico
       this.historico.push({
         role: 'model',
         parts: [{ text: respostaFinal }]
@@ -124,23 +122,21 @@ SITUAÇÃO ATUAL DO PEDIDO:
       return {
         resposta: respostaFinal,
         acoesExecutadas,
-        modoUsado: 'llm'
+        modoUsado: 'llm',
+        cards: cardsRetornados
       };
     } catch (err) {
       console.warn('[AgentManager] Falha no Gemini, acionando fallback determinístico:', err.message);
-      // Fallback gracioso: não quebra a experiência do usuário se a API cair
       const resultadoFallback = this.deterministicAgent.processarMensagem(mensagemTexto);
       return {
         resposta: resultadoFallback.resposta + '\n\n*(Nota: Resposta gerada via motor local devido a oscilação na API)*',
         acoesExecutadas: resultadoFallback.acoesExecutadas,
-        modoUsado: 'fallback'
+        modoUsado: 'fallback',
+        cards: resultadoFallback.cards || null
       };
     }
   }
 
-  /**
-   * Executa a ferramenta solicitada pelo LLM sob validação estrita do JavaScript.
-   */
   executarAcaoValidada(nomeAcao, args = {}) {
     const validacao = Guardrails.validarChamadaAcao(nomeAcao, args);
     if (!validacao.valido) {
@@ -180,6 +176,10 @@ SITUAÇÃO ATUAL DO PEDIDO:
 
       case 'alterar_quantidade': {
         return this.carrinho.alterarQuantidade(argsSanitizados.produto_id, argsSanitizados.quantidade);
+      }
+
+      case 'aplicar_cupom': {
+        return this.carrinho.aplicarCupom(argsSanitizados.codigo);
       }
 
       case 'consultar_carrinho': {

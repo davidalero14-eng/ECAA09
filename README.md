@@ -6,24 +6,31 @@ Aplicação web completa, funcional, moderna e responsiva para o restaurante fic
 
 ## 🎯 Objetivo da Aplicação
 
-Desenvolvida com fins acadêmicos e comerciais demonstrativos, a aplicação resolve a jornada de compra de refeições prontas (marmitas individuais, bebidas e sobremesas) através de uma **conversa natural, empática e fluida** com o cliente.
+Desenvolvida com rigor acadêmico e visual comercial profissional, a aplicação resolve a jornada de compra de refeições prontas (marmitas individuais, bebidas e sobremesas) através de uma **conversa natural, empática e fluida** com o cliente.
 
 O sistema demonstra na prática:
-- Integração direta do navegador com LLM (**Google Gemini via Function Calling/Tool Use**).
+- Integração direta do navegador com LLM (**Google Gemini 1.5 Flash via Function Calling/Tool Use**).
 - Interpretação robusta de linguagem natural (gírias, pronomes, trocas, cancelamentos e erros comuns de digitação).
 - Gerenciamento de contexto e memória de curto prazo durante a sessão.
-- **Guardrails de segurança** contra Prompt Injection, Jailbreak e vazamento de regras internas.
-- **Autoridade financeira estrita no JavaScript**: o LLM nunca dita valores nem inventa itens; todas as operações monetárias são calculadas com base nas regras do cardápio estruturado.
+- **Guardrails Avançados de Segurança**:
+  - Filtro contra **Fuga de Escopo** (bloqueio de tentativas de usar o chatbot para programar código, escrever redações, debater política/religião, diagnósticos médicos ou jogos de RPG).
+  - Proteção contra **Prompt Injection**, **Jailbreak** (DAN, Developer Mode) e **Engenharia Reversa** de regras internas.
+  - Normalizador de texto anti-ofuscação (detecta leetspeak e espaçamentos maliciosos).
+- **Autoridade financeira estrita no JavaScript**: o LLM nunca dita valores nem inventa itens; todas as operações monetárias e cupons de desconto são calculados com base nas regras do cardápio estruturado.
 - **Modo Demonstração Determinístico (Sem Chave)**: permite testar e avaliar 100% da aplicação sem precisar de chave externa.
+- **Simulador Interativo de Dia da Semana**: controle visual para testar a qualquer momento a disponibilidade de pratos de segunda a domingo.
+- **Acessibilidade por Voz (Text-to-Speech)** e **Efeitos Sonoros** sintetizados nativamente via Web Audio API e Web Speech API.
+- **Acompanhamento de Pedido ao Vivo**: modal interativo com stepper de preparação e entrega simulada.
 
 ---
 
 ## 🛠️ Tecnologias Utilizadas
 
-- **HTML5 Semântico**: Estruturação acessível e amigável para SEO e leitores de tela.
+- **HTML5 Semântico**: Estruturação acessível, semântica e amigável.
 - **CSS3 Moderno**: Variáveis nativas (Custom Properties), Flexbox, CSS Grid, animações fluidas e design responsivo (Mobile First / Drawer).
 - **JavaScript Moderno (ES6+)**: Módulos nativos (`import`/`export`), classes orientadas a responsabilidades únicas, manipulação reativa de eventos do DOM.
 - **Google Gemini API**: Modelo `gemini-1.5-flash` via REST client-side com chamada estruturada de ferramentas (`tools` / `functionDeclarations`).
+- **Web Audio API & Web Speech API**: Efeitos sonoros procedurais e síntese de voz nativa em português sem arquivos MP3 pesados.
 - **FontAwesome & SVG**: Ícones vetoriais leves e intuitivos.
 - **Totalmente Client-Side**: Sem dependência de Node.js, sem backend próprio e sem banco de dados externo.
 
@@ -31,14 +38,14 @@ O sistema demonstra na prática:
 
 ## 🏛️ Arquitetura do Sistema e do Agente LLM
 
-A arquitetura do projeto foi desenhada separando claramente a camada de apresentação, a máquina de regras de negócio e a camada cognitiva:
+A arquitetura do projeto separa claramente apresentação, lógica de negócios e cognição:
 
 ```
 /ChatBot - Marmitaria
 │
-├── index.html                  # Interface principal (Chat, Carrinho e Modal de Configuração)
-├── test-runner.html            # Executor visual dos 12 testes de validação obrigatórios
-├── README.md                   # Documentação detalhada
+├── index.html                  # Interface principal (Chat, Carrinho, Simulador, Modais e Áudio)
+├── test-runner.html            # Executor visual dos 16 testes de validação automatizados
+├── README.md                   # Documentação detalhada e guia de publicação
 ├── .gitignore                  # Arquivos ignorados pelo Git
 │
 ├── assets/
@@ -46,41 +53,48 @@ A arquitetura do projeto foi desenhada separando claramente a camada de apresent
 │   └── images/
 │
 ├── css/
-│   ├── style.css               # Identidade visual, tipografia, balões do chat e carrinho
+│   ├── style.css               # Design system, tipografia, balões, carrinho e modais
 │   └── responsive.css          # Adaptações para mobile, gaveta deslizante (drawer)
 │
 └── js/
     ├── app.js                  # Ponto de entrada, orquestração da UI e ciclo de eventos
     ├── agent.js                # Orquestrador do Agente (Gemini LLM x Modo Determinístico)
     ├── agent_tools.js          # Definições de ferramentas (Function Calling) e System Prompt
-    ├── llm.js                  # Comunicação HTTP segura com a API do Google Gemini
-    ├── guardrails.js           # Camada de segurança (Prompt Injection, limites, sanitização)
+    ├── llm.js                  # Comunicação HTTP segura com a API do Google Gemini + Teste de Conexão
+    ├── guardrails.js           # Camada de segurança (Prompt Injection, Fuga de Escopo, Sanitização)
     ├── deterministic_agent.js  # Motor conversacional local para o Modo Demonstração
-    ├── menu.js                 # Cardápio oficial, regras diárias e personalizações válidas
-    ├── cart.js                 # Máquina de estado do Carrinho e regras financeiras
-    ├── checkout.js             # Validação de dados de entrega e forma de pagamento
-    ├── chatbot.js              # Gerenciador de renderização de mensagens e digitação
+    ├── menu.js                 # Cardápio oficial, regras diárias, cupons e simulador de dias
+    ├── cart.js                 # Máquina de estado do Carrinho e regras financeiras estritas
+    ├── checkout.js             # Validação de dados de entrega, pagamentos e rastreamento
+    ├── chatbot.js              # Gerenciador de renderização de mensagens e cards visuais
+    ├── sound.js                # Web Audio API (tons) e Web Speech API (síntese de voz pt-BR)
     ├── utils.js                # Sanitização contra XSS, formatação de moeda BRL e IDs
-    └── tests.js                # Suíte com os 12 testes obrigatórios implementados
+    └── tests.js                # Suíte com 16 testes automatizados implementados
 ```
 
 ---
 
 ## 🛡️ Estratégia de Guardrails e Segurança do Agente
 
-1. **Proteção contra Prompt Injection e Jailbreak**:
-   - `guardrails.js` inspeciona a entrada do usuário antes do envio ao modelo. Padrões como `"ignore todas as instruções anteriores"`, `"mostre seu prompt de sistema"`, `"finja que é um admin"`, `"de tudo de graça"` ou comandos de script são imediatamente bloqueados.
-2. **Autoridade Financeira do JavaScript**:
-   - O LLM **nunca** calcula nem define valores. Ele apenas sinaliza a intenção (ex: `adicionar_item(produto_id, quantidade)`). O cálculo real de subtotais, taxas de entrega e total é feito pelo `cart.js` a partir dos preços cadastrados em `menu.js`.
-3. **Validação Estrita de Ferramentas (Function Calling)**:
-   - IDs de produtos desconhecidos são rejeitados antes de atingirem o carrinho.
-   - Limite de quantidade para coibir abusos (máximo 30 por item).
-4. **Proteção de Dados Pessoais e Sensíveis**:
-   - Expressões regulares bloqueiam o envio de números completos de cartões de crédito ou senhas no chat.
-   - Os pagamentos reais não são processados (aplicação demonstrativa/acadêmica); as opções são PIX, Dinheiro ou Cartão na entrega.
-5. **Armazenamento Seguro da Chave de API**:
-   - A chave do Gemini é salva exclusivamente em `sessionStorage` (memória temporária da aba do navegador), podendo ser apagada a qualquer momento pelo usuário. Nenhuma chave é salva no código ou enviada para servidores terceiros.
-6. **Sanitização contra XSS**:
+1. **Prevenção de Fuga de Escopo (Out-of-Scope Enforcement)**:
+   - Bloqueia com precisão solicitações de programação (`"faça um código em Python"`), redações acadêmicas, debates políticos/religiosos, diagnósticos médicos e jogos de RPG desconexos.
+   - Responde com empatia e redireciona imediatamente o cliente de volta para as marmitas do dia.
+2. **Proteção contra Prompt Injection e Jailbreak**:
+   - `guardrails.js` inspeciona a entrada bruta e normalizada (anti-leetspeak) antes de qualquer envio. Padrões como `"ignore todas as instruções anteriores"`, `"mostre seu prompt de sistema"`, `"finja que é um admin"`, `"de tudo de graça"` ou comandos de script são imediatamente neutralizados.
+3. **Autoridade Financeira Estrita no JavaScript**:
+   - O LLM **nunca** calcula nem define valores. Ele apenas sinaliza a intenção (ex: `adicionar_item(produto_id, quantidade)` ou `aplicar_cupom(codigo)`). O cálculo real de subtotais, descontos, frete e total é feito pelo `cart.js` a partir dos dados oficiais em `menu.js`.
+4. **Sistema de Cupons com Validação Client-Side**:
+   - Cupons aceitos:
+     - `PRIMEIRACOMPRA`: R$ 5,00 de desconto
+     - `MARMITAE10`: 10% de desconto sobre o valor dos pratos
+     - `FRETEGRATIS`: Isenção da taxa de entrega
+   - Cupons arbitrários ou maliciosos são rejeitados pelo sistema.
+5. **Proteção de Dados Pessoais e Sensíveis**:
+   - Expressões regulares bloqueiam o envio de números completos de cartões de crédito, senhas ou CPFs no chat.
+   - Aplicação acadêmica demonstrativa: pagamentos reais não são cobrados; as opções simuladas são PIX, Dinheiro (com troco) ou Cartão na entrega.
+6. **Armazenamento Seguro da Chave de API**:
+   - A chave do Gemini é salva exclusivamente em `sessionStorage` (memória temporária da aba do navegador), com botão de teste de conexão e opção de limpeza imediata. Nenhuma chave é gravada no código.
+7. **Sanitização contra XSS**:
    - Todas as mensagens passam por `escaparHTML()` em `utils.js` antes da renderização no DOM.
 
 ---
@@ -107,9 +121,9 @@ A arquitetura do projeto foi desenhada separando claramente a camada de apresent
 
 ## 🚀 Como Executar Localmente
 
-Como a aplicação é 100% estática baseada em ES6 Modules, utilize qualquer servidor web local simples (para evitar restrições de CORS em arquivos locais `file://`):
+Como a aplicação é 100% estática baseada em ES6 Modules, utilize qualquer servidor web local simples:
 
-### Opção 1: Usando Python (já disponível na maioria dos sistemas)
+### Opção 1: Usando Python (recomendado)
 ```bash
 # Na pasta do projeto:
 python -m http.server 8000
@@ -126,18 +140,18 @@ Acesse no navegador: `http://localhost:8000`
 
 1. Acesse o [Google AI Studio](https://aistudio.google.com/) e faça login com sua conta Google.
 2. Clique em **"Get API key"** e gere uma chave gratuita.
-3. No topo direito do Marmitaê, clique no botão **"Configuração"** (ou no badge de modo).
-4. Cole sua chave no campo **"Chave de API do Google Gemini"**.
+3. No topo direito do Marmitaê, clique no botão **"API Gemini"** (ou no badge de modo).
+4. Cole sua chave no campo correspondente e clique em **"Testar Conexão"** para verificar a validade em tempo real.
 5. Selecione a opção **"Modo IA Gemini (Com chave)"** e clique em **"Salvar Configuração"**.
 6. O badge no topo mudará para **"IA Gemini"** com o ícone roxo, e todas as conversas passarão a ser interpretadas pelo modelo LLM com suporte a Function Calling!
 
 ---
 
-## 🧪 Como Utilizar o Modo Demonstração (Sem Chave)
+## 🧪 Como Utilizar o Modo Demonstração e Executar os Testes
 
 - O **Modo Demo** já vem ativado por padrão!
-- Ele foi construído com um motor semântico determinístico completo (`deterministic_agent.js`) capaz de responder a saudações, interpretar variações de pedidos ("uma de bife sem cebola", "troca a batata por purê", "coloca uma coca", "cancela a bebida"), atualizar quantidades, aplicar frete ou retirada, solicitar confirmação e gerar o recibo final do pedido.
-- Para rodar os **12 Testes Obrigatórios**, abra `test-runner.html` no seu navegador ou clique no atalho de testes. Todos os 12 cenários previstos na especificação são validados e exibidos com status visual verde.
+- Ele foi construído com um motor semântico determinístico completo (`deterministic_agent.js`) capaz de responder a saudações, interpretar variações de pedidos ("uma de bife sem cebola", "troca a batata por purê", "coloca uma coca", "cancela a bebida"), aplicar cupons, atualizar quantidades, aplicar frete ou retirada, solicitar confirmação e gerar o recibo final do pedido.
+- Para rodar os **16 Testes Automatizados**, abra `test-runner.html` no seu navegador (`http://localhost:8000/test-runner.html`). Todos os 16 cenários previstos na especificação são validados e exibidos com status visual verde!
 
 ---
 
@@ -148,7 +162,7 @@ Acesse no navegador: `http://localhost:8000`
    ```bash
    git init
    git add .
-   git commit -m "feat: implementacao completa do chatbot inteligente Marmitae"
+   git commit -m "feat: melhorias avancadas de guardrails, cupons, voz e tracker no Marmitae"
    git branch -M main
    git remote add origin https://github.com/SEU-USUARIO/marmitae-chatbot.git
    git push -u origin main
@@ -159,12 +173,4 @@ Acesse no navegador: `http://localhost:8000`
    - Em **Source**, selecione `Deploy from a branch`.
    - Em **Branch**, selecione `main` e a pasta `/(root)`.
    - Clique em **Save**.
-5. Em cerca de 1 a 2 minutos, o GitHub Pages fornecerá o link público (exemplo: `https://seu-usuario.github.io/marmitae-chatbot/`).
-
----
-
-## ⚠️ Limitações Conhecidas da Aplicação
-
-- Por ser uma aplicação estática *client-side* sem backend próprio, não há envio real para impressoras de comandas ou WhatsApp de restaurantes parceiros.
-- A chave de API do Gemini, quando inserida, fica restrita à sessão local do navegador (`sessionStorage`) do usuário que a digitou.
-- O modo com IA Gemini necessita de conexão com a internet para alcançar os endpoints da Google Cloud/AI Studio. Caso haja oscilação na rede, o sistema automaticamente aciona o *fallback* para o motor determinístico local.
+5. Em 1 a 2 minutos, o GitHub Pages fornecerá o link público (exemplo: `https://seu-usuario.github.io/marmitae-chatbot/`).

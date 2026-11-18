@@ -2,23 +2,33 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <title>Marmitaê - Runner de Testes Automatizados</title>
+  <title>Marmitaê - Runner de Testes Automatizados (16 Testes)</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧪</text></svg>">
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 2rem; background: #fdfaf7; color: #333; }
-    h1 { color: #d84315; }
-    .test-box { background: #fff; border-radius: 8px; padding: 1rem 1.5rem; margin-bottom: 0.75rem; border-left: 6px solid #ccc; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 2rem; background: #fdfaf7; color: #333; max-width: 900px; margin: 0 auto; }
+    h1 { color: #d84315; margin-bottom: 0.5rem; }
+    .subtitle { color: #666; margin-bottom: 1.5rem; font-size: 0.95rem; }
+    .test-box { background: #fff; border-radius: 8px; padding: 1rem 1.25rem; margin-bottom: 0.75rem; border-left: 6px solid #ccc; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
     .passed { border-color: #2e7d32; }
     .failed { border-color: #c62828; background: #ffebee; }
     .badge { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 4px; font-weight: bold; font-size: 0.8rem; margin-right: 0.5rem; }
     .badge-pass { background: #e8f5e9; color: #2e7d32; }
     .badge-fail { background: #ffebee; color: #c62828; }
-    .summary { font-size: 1.2rem; font-weight: bold; margin-bottom: 1.5rem; }
-    .btn-voltar { display: inline-block; margin-top: 1.5rem; padding: 0.6rem 1.2rem; background: #e65100; color: #fff; text-decoration: none; border-radius: 20px; font-weight: bold; }
+    .summary-card { background: #fff; border: 1px solid #ebdcd0; border-radius: 12px; padding: 1.25rem; margin-bottom: 1.5rem; box-shadow: 0 4px 12px rgba(230,81,0,0.08); }
+    .summary-title { font-size: 1.25rem; font-weight: bold; color: #2e7d32; }
+    .btn-voltar { display: inline-block; margin-top: 1.5rem; padding: 0.65rem 1.4rem; background: #e65100; color: #fff; text-decoration: none; border-radius: 20px; font-weight: bold; box-shadow: 0 2px 8px rgba(230,81,0,0.25); }
+    .btn-voltar:hover { background: #ac1900; }
   </style>
 </head>
 <body>
-  <h1>🧪 Marmitaê - Execução dos 12 Testes Obrigatórios</h1>
-  <div class="summary" id="summary">Executando testes...</div>
+  <h1>🧪 Marmitaê - Runner de Testes Automatizados</h1>
+  <p class="subtitle">Execução dos 16 cenários de teste (12 requisitos originais + 4 testes avançados de segurança, cupons e fuga de escopo).</p>
+  
+  <div class="summary-card">
+    <div class="summary-title" id="summary">Executando suíte de testes...</div>
+    <div id="summary-sub" style="font-size: 0.85rem; color: #666; margin-top: 0.25rem;"></div>
+  </div>
+
   <div id="results"></div>
   <a href="index.html" class="btn-voltar">← Voltar para o Marmitaê</a>
 
@@ -28,11 +38,12 @@
     const results = runAllTests();
     const resultsContainer = document.getElementById('results');
     const summaryContainer = document.getElementById('summary');
+    const summarySub = document.getElementById('summary-sub');
 
     let passedCount = 0;
     resultsContainer.innerHTML = '';
 
-    results.forEach(t => {
+    results.forEach((t, idx) => {
       if (t.passed) passedCount++;
       const div = document.createElement('div');
       div.className = `test-box ${t.passed ? 'passed' : 'failed'}`;
@@ -44,7 +55,13 @@
       resultsContainer.appendChild(div);
     });
 
-    summaryContainer.innerHTML = `Resultado Final: ${passedCount} de ${results.length} testes passaram com sucesso! ${passedCount === results.length ? '🎉 TODOS OS REQUISITOS ATENDIDOS' : '⚠️ ATENÇÃO'}`;
+    if (passedCount === results.length) {
+      summaryContainer.innerHTML = `🎉 Todos os ${results.length} testes passaram com 100% de sucesso!`;
+      summarySub.textContent = 'Validação completa de fluxos de vendas, personalizações, guardrails contra injeção e fuga de escopo, cupons e regras de negócio.';
+    } else {
+      summaryContainer.innerHTML = `⚠️ Atenção: ${passedCount} de ${results.length} testes passaram.`;
+      summaryContainer.style.color = '#c62828';
+    }
   </script>
 </body>
 </html>

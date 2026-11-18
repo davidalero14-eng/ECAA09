@@ -1,9 +1,10 @@
 /**
  * Marmitaê - Gerenciador do Carrinho de Compras
- * Todos os cálculos de subtotais e totais são calculados com base estrita no menu.js.
+ * Todos os cálculos de subtotais, descontos de cupons e totais são calculados
+ * com base estrita no menu.js e regras monetárias determinísticas.
  */
 
-import { buscarProdutoPorId, TAXA_ENTREGA_PADRAO } from './menu.js';
+import { buscarProdutoPorId, TAXA_ENTREGA_PADRAO, CUPONS_VALIDOS } from './menu.js';
 import { gerarIdUnico } from './utils.js';
 
 export class Carrinho {
@@ -11,6 +12,7 @@ export class Carrinho {
     this.itens = []; // Array de itens { idItem, produtoId, nome, precoUnitario, quantidade, personalizacoes: [], observacoes: '' }
     this.tipoEntrega = 'entrega'; // 'entrega' ou 'retirada'
     this.taxaEntrega = TAXA_ENTREGA_PADRAO;
+    this.cupom = null; // Objeto do cupom aplicado { codigo, tipo, valor, descricao }
     this.onChangeCallback = onChangeCallback;
   }
 
@@ -138,7 +140,6 @@ export class Carrinho {
     }
 
     if (Array.isArray(novasPersonalizacoes) && novasPersonalizacoes.length > 0) {
-      // Mescla ou substitui personalizações
       const unificadas = Array.from(new Set([...item.personalizacoes, ...novasPersonalizacoes]));
       item.personalizacoes = unificadas;
     }
@@ -168,12 +169,65 @@ export class Carrinho {
   }
 
   /**
+   * Aplica um cupom de desconto com estrita validação client-side.
+   * @param {string} codigo
+   * @returns {{ sucesso: boolean, cupom?: object, erro?: string }}
+   */
+  aplicarCupom(codigo) {
+    if (!codigo) {
+      return { sucesso: false, erro: 'Código de cupom inválido ou vazio.' };
+    }
+
+    const codLimpo = String(codigo).toUpperCase().trim();
+    const cupomEncontrado = CUPONS_VALIDOS[codLimpo];
+
+    if (!cupomEncontrado) {
+      return {
+        sucesso: false,
+        erro: `O cupom "${codigo}" não é válido. Cupons oficiais disponíveis: PRIMEIRACOMPRA, MARMITAE10, FRETEGRATIS.`
+      };
+    }
+
+    this.cupom = cupomEncontrado;
+    this.notificar();
+    return { sucesso: true, cupom: this.cupom };
+  }
+
+  /**
+   * Remove cupom de desconto atualmente aplicado.
+   */
+  removerCupom() {
+    this.cupom = null;
+    this.notificar();
+    return { sucesso: true };
+  }
+
+  /**
+   * Calcula o valor do desconto do cupom sobre o subtotal.
+   */
+  calcularDesconto() {
+    if (!this.cupom) return 0;
+    const subtotal = this.calcularSubtotal();
+    if (subtotal <= 0) return 0;
+
+    if (this.cupom.tipo === 'fixo') {
+      return Math.min(subtotal, this.cupom.valor);
+    } else if (this.cupom.tipo === 'porcentagem') {
+      return parseFloat((subtotal * this.cupom.valor).toFixed(2));
+    } else if (this.cupom.tipo === 'frete_gratis') {
+      return 0; // Desconto incide sobre a taxa de entrega
+    }
+    return 0;
+  }
+
+  /**
    * Esvazia o carrinho completamente.
    */
   limpar() {
     this.itens = [];
     this.tipoEntrega = 'entrega';
     this.taxaEntrega = TAXA_ENTREGA_PADRAO;
+    this.cupom = null;
     this.notificar();
   }
 
@@ -181,16 +235,29 @@ export class Carrinho {
    * Calcula o subtotal de todos os itens.
    */
   calcularSubtotal() {
-    return this.itens.reduce((acc, it) => acc + (it.precoUnitario * it.quantidade), 0);
+    const total = this.itens.reduce((acc, it) => acc + (it.precoUnitario * it.quantidade), 0);
+    return parseFloat(total.toFixed(2));
   }
 
   /**
-   * Calcula o valor total final com frete/taxa.
+   * Retorna a taxa de entrega efetiva considerando retirada ou cupom de frete grátis.
+   */
+  obterTaxaEntregaEfetiva() {
+    if (this.tipoEntrega === 'retirada') return 0;
+    if (this.cupom && this.cupom.tipo === 'frete_gratis') return 0;
+    return this.taxaEntrega;
+  }
+
+  /**
+   * Calcula o valor total final com frete/taxa e desconto aplicado.
    */
   calcularTotal() {
     const subtotal = this.calcularSubtotal();
     if (subtotal === 0) return 0;
-    return subtotal + this.taxaEntrega;
+    const desconto = this.calcularDesconto();
+    const taxa = this.obterTaxaEntregaEfetiva();
+    const total = Math.max(0, subtotal - desconto + taxa);
+    return parseFloat(total.toFixed(2));
   }
 
   /**
@@ -205,12 +272,18 @@ export class Carrinho {
    */
   obterEstado() {
     const subtotal = this.calcularSubtotal();
+    const desconto = this.calcularDesconto();
+    const taxaEntregaEfetiva = this.obterTaxaEntregaEfetiva();
     const total = this.calcularTotal();
+
     return {
       itens: JSON.parse(JSON.stringify(this.itens)),
       quantidadeTotalItens: this.obterQuantidadeTotal(),
       tipoEntrega: this.tipoEntrega,
-      taxaEntrega: this.taxaEntrega,
+      taxaEntrega: taxaEntregaEfetiva,
+      taxaEntregaOriginal: this.taxaEntrega,
+      cupom: this.cupom ? { ...this.cupom } : null,
+      desconto,
       subtotal,
       total,
       vazio: this.itens.length === 0
@@ -238,15 +311,27 @@ export class Carrinho {
     });
 
     const subtotal = this.calcularSubtotal();
+    const desconto = this.calcularDesconto();
+    const taxaEfetiva = this.obterTaxaEntregaEfetiva();
     const total = this.calcularTotal();
 
     linhas.push('');
     linhas.push(`Subtotal: R$ ${subtotal.toFixed(2).replace('.', ',')}`);
+
+    if (this.cupom) {
+      if (this.cupom.tipo === 'frete_gratis') {
+        linhas.push(`Cupom [${this.cupom.codigo}]: Frete Grátis aplicado!`);
+      } else {
+        linhas.push(`Cupom [${this.cupom.codigo}]: -R$ ${desconto.toFixed(2).replace('.', ',')} (${this.cupom.descricao})`);
+      }
+    }
+
     if (this.tipoEntrega === 'retirada') {
       linhas.push(`Retirada no restaurante: Grátis (R$ 0,00)`);
     } else {
-      linhas.push(`Taxa de entrega: R$ ${this.taxaEntrega.toFixed(2).replace('.', ',')}`);
+      linhas.push(`Taxa de entrega: R$ ${taxaEfetiva.toFixed(2).replace('.', ',')}`);
     }
+
     linhas.push(`Total a pagar: R$ ${total.toFixed(2).replace('.', ',')}`);
 
     return linhas.join('\n');

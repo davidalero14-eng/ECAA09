@@ -1,6 +1,7 @@
 /**
- * Marmitaê - Cardápio Estruturado e Regras de Negócio
- * Contém categorias, produtos, acompanhamentos permitidos, personalizações e disponibilidade diária.
+ * Marmitaê - Cardápio Estruturado, Regras de Negócio e Tabela de Cupons
+ * Contém categorias, produtos, acompanhamentos permitidos, personalizações,
+ * disponibilidade diária, simulação de dia da semana e validação de cupons.
  */
 
 export const DIAS_SEMANA = [
@@ -30,6 +31,62 @@ export const CATEGORIAS = {
   BEBIDAS: 'bebidas',
   SOBREMESAS: 'sobremesas'
 };
+
+// Cupons promocionais oficiais aceitos pelo sistema
+export const CUPONS_VALIDOS = {
+  'PRIMEIRACOMPRA': {
+    codigo: 'PRIMEIRACOMPRA',
+    tipo: 'fixo',
+    valor: 5.00,
+    descricao: 'R$ 5,00 de desconto de boas-vindas'
+  },
+  'MARMITAE10': {
+    codigo: 'MARMITAE10',
+    tipo: 'porcentagem',
+    valor: 0.10, // 10%
+    descricao: '10% de desconto no total dos pratos'
+  },
+  'FRETEGRATIS': {
+    codigo: 'FRETEGRATIS',
+    tipo: 'frete_gratis',
+    valor: 5.00,
+    descricao: 'Taxa de entrega gratuita'
+  }
+};
+
+// Estado da simulação de dia da semana (útil para testes acadêmicos e auditoria)
+let _diaSimulado = null;
+
+export function setDiaSimulado(dia) {
+  if (!dia || dia === 'auto') {
+    _diaSimulado = null;
+  } else {
+    const diaNorm = String(dia).toLowerCase().trim();
+    if (DIAS_SEMANA.includes(diaNorm)) {
+      _diaSimulado = diaNorm;
+    }
+  }
+}
+
+export function getDiaSimulado() {
+  return _diaSimulado;
+}
+
+/**
+ * Retorna o dia da semana atual (ou simulado para testes).
+ * @param {string|null} diaForcado
+ * @returns {string} nome do dia em minúsculas (ex: 'quarta')
+ */
+export function getDiaAtual(diaForcado = null) {
+  if (diaForcado && DIAS_SEMANA.includes(diaForcado.toLowerCase())) {
+    return diaForcado.toLowerCase();
+  }
+  if (_diaSimulado && DIAS_SEMANA.includes(_diaSimulado)) {
+    return _diaSimulado;
+  }
+  const hojeIndex = new Date().getDay();
+  return DIAS_SEMANA[hojeIndex];
+}
 
 export const CARDAPIO = [
   // --- MARMITAS ---
@@ -254,19 +311,6 @@ export const CARDAPIO = [
     personalizacoesPossiveis: {}
   }
 ];
-
-/**
- * Retorna o dia da semana atual (ou simulado para testes).
- * @param {string|null} diaForcado
- * @returns {string} nome do dia em minúsculas (ex: 'quarta')
- */
-export function getDiaAtual(diaForcado = null) {
-  if (diaForcado && DIAS_SEMANA.includes(diaForcado.toLowerCase())) {
-    return diaForcado.toLowerCase();
-  }
-  const hojeIndex = new Date().getDay();
-  return DIAS_SEMANA[hojeIndex];
-}
 
 /**
  * Consulta itens disponíveis para um determinado dia da semana.

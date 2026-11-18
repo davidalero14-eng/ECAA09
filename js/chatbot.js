@@ -1,9 +1,10 @@
 /**
  * Marmitaê - Gerenciador da Interface do Chatbot
- * Renderiza mensagens, balões, horários, indicador de digitação e botões de atalho.
+ * Renderiza mensagens, balões com efeito de entrada suave, horários,
+ * indicador de digitação, cartões ricos de produtos e botões de atalho.
  */
 
-import { formatarTextoMensagem, getHoraAtual, escaparHTML } from './utils.js';
+import { formatarTextoMensagem, getHoraAtual, escaparHTML, formatarMoeda } from './utils.js';
 
 export class ChatbotUI {
   constructor(containerMensagensId, digitandoId) {
@@ -29,21 +30,46 @@ export class ChatbotUI {
   }
 
   /**
-   * Adiciona mensagem do agente (bot) com badge opcional indicando modo.
+   * Adiciona mensagem do agente (bot) com badge indicando o modo de processamento.
+   * Suporta renderização opcional de cards visuais de produtos.
    * @param {string} texto 
    * @param {string} modoUsado 'llm', 'demo', 'guardrails' ou 'fallback'
+   * @param {Array<object>} cardsProdutos Lista opcional de produtos para exibir cards visuais
    */
-  adicionarMensagemBot(texto, modoUsado = 'demo') {
+  adicionarMensagemBot(texto, modoUsado = 'demo', cardsProdutos = null) {
     const el = document.createElement('div');
     el.className = 'mensagem mensagem-bot';
 
     let badgeHtml = '';
     if (modoUsado === 'llm') {
-      badgeHtml = '<span class="badge-modo badge-ia" title="Resposta gerada por IA (Google Gemini)"><i class="fa-solid fa-sparkles"></i> IA Gemini</span>';
+      badgeHtml = '<span class="badge-modo badge-ia" title="Processado por IA (Google Gemini 1.5 Flash)"><i class="fa-solid fa-sparkles"></i> IA Gemini</span>';
     } else if (modoUsado === 'demo') {
-      badgeHtml = '<span class="badge-modo badge-demo" title="Resposta determinística de demonstração"><i class="fa-solid fa-cube"></i> Modo Demo</span>';
+      badgeHtml = '<span class="badge-modo badge-demo" title="Processado pelo Motor Determinístico Local"><i class="fa-solid fa-cube"></i> Modo Demo</span>';
     } else if (modoUsado === 'guardrails') {
-      badgeHtml = '<span class="badge-modo badge-guardrail" title="Filtro de segurança e proteção"><i class="fa-solid fa-shield-halved"></i> Guardrail</span>';
+      badgeHtml = '<span class="badge-modo badge-guardrail" title="Filtro Ativo de Segurança e Integridade"><i class="fa-solid fa-shield-halved"></i> Guardrail Ativo</span>';
+    } else if (modoUsado === 'fallback') {
+      badgeHtml = '<span class="badge-modo badge-fallback" title="Fallback gracioso local acionado"><i class="fa-solid fa-arrows-rotate"></i> Fallback</span>';
+    }
+
+    let cardsHtml = '';
+    if (cardsProdutos && Array.isArray(cardsProdutos) && cardsProdutos.length > 0) {
+      cardsHtml = `
+        <div class="cards-produtos-container">
+          ${cardsProdutos.map(prod => `
+            <div class="card-produto-chat" data-id="${prod.id}">
+              <div class="card-produto-header">
+                <span class="card-produto-tag">${prod.categoria.toUpperCase()}</span>
+                <span class="card-produto-preco">${formatarMoeda(prod.preco)}</span>
+              </div>
+              <div class="card-produto-nome">${escaparHTML(prod.nome)}</div>
+              <div class="card-produto-desc">${escaparHTML(prod.descricao)}</div>
+              <button type="button" class="btn-card-pedir" data-id="${prod.id}">
+                <i class="fa-solid fa-plus"></i> Pedir este
+              </button>
+            </div>
+          `).join('')}
+        </div>
+      `;
     }
 
     el.innerHTML = `
@@ -56,6 +82,7 @@ export class ChatbotUI {
           ${badgeHtml}
         </div>
         <div class="mensagem-texto">${formatarTextoMensagem(texto)}</div>
+        ${cardsHtml}
         <span class="mensagem-hora">${getHoraAtual()}</span>
       </div>
     `;
@@ -85,11 +112,11 @@ export class ChatbotUI {
   }
 
   /**
-   * Faz scroll automático suave para a última mensagem.
+   * Faz scroll suave para a última mensagem.
    */
   rolarParaFinal() {
     setTimeout(() => {
       this.container.scrollTop = this.container.scrollHeight;
-    }, 50);
+    }, 40);
   }
 }

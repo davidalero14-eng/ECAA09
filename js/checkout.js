@@ -47,7 +47,6 @@ export class CheckoutManager {
    */
   setEndereco(dados) {
     if (typeof dados === 'string') {
-      // Se vier uma string corrida com endereço
       this.cliente.endereco.rua = dados.trim();
     } else if (typeof dados === 'object' && dados !== null) {
       if (dados.rua) this.cliente.endereco.rua = dados.rua.trim();
@@ -149,6 +148,8 @@ export class CheckoutManager {
       clienteNome: this.cliente.nome || 'Cliente',
       itensTexto: linhasItens,
       subtotal: estado.subtotal,
+      desconto: estado.desconto,
+      cupom: estado.cupom,
       taxaEntrega: estado.taxaEntrega,
       total: estado.total,
       tipoEntrega: this.carrinho.tipoEntrega,
@@ -160,7 +161,7 @@ export class CheckoutManager {
 
   /**
    * Finaliza o pedido após confirmação explícita.
-   * Valida tudo antes de emitir o comprovante.
+   * Valida tudo antes de emitir o comprovante e iniciar rastreamento.
    */
   confirmarEFinalizar() {
     const pendencias = this.obterPendencias();
@@ -179,6 +180,7 @@ export class CheckoutManager {
     this.pedidoFinalizado = {
       numeroPedido,
       dataHora,
+      statusAtual: 'recebido', // 'recebido' -> 'cozinha' -> 'entrega' -> 'concluido'
       ...resumo
     };
 
