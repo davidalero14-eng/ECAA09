@@ -13,7 +13,7 @@ export class DeterministicAgent {
     this.carrinho = carrinho;
     this.checkout = checkout;
     this.ultimoItemMencionadoId = null;
-    this.aguardandoDado = null; // 'nome' | 'endereco' | 'formaPagamento' | 'troco'
+    this.aguardandoDado = null; // 'nome' | 'endereco' | 'formaPagamento' | 'troco' | 'sugestao'
   }
 
   reset() {
@@ -108,6 +108,16 @@ export class DeterministicAgent {
       }
       this.aguardandoDado = null;
       return this.gerarPromptResumoConfirmacao(acoes, `Perfeito! Levamos troco certinho.`);
+    }
+
+    // E. Aguardando Resposta a uma Sugestão Adicional (bebida, sobremesa, etc.)
+    if (this.aguardandoDado === 'sugestao') {
+      const ehRecusa = /^(nao|não|n|nao quero|não quero|so isso|só isso|somente isso|sem sobremesa|sem bebida|mais nada|nada|deixa assim|deixa so|dispensa)$/i.test(texto) ||
+                       texto.includes('nao quero') || texto.includes('não quero') || texto.includes('so isso') || texto.includes('mais nada');
+      if (ehRecusa) {
+        this.aguardandoDado = null;
+        return this.gerarPromptResumoConfirmacao(acoes, 'Sem problemas! Vamos prosseguir com o seu pedido. 👍');
+      }
     }
 
     // =========================================================================
@@ -382,9 +392,16 @@ export class DeterministicAgent {
       const temBebida = this.carrinho.itens.some(i => i.categoria === 'bebidas');
       let sugestao = '';
       if (!temBebida) {
+        this.aguardandoDado = 'sugestao';
         sugestao = `\n\nQue tal um **Suco natural** geladinho (R$ 7,00) ou um **Refrigerante lata** (R$ 6,00) para acompanhar?`;
       } else {
-        sugestao = `\n\nPara fechar com chave de ouro, gostaria de um **Pudim** tradicional (R$ 7,00) de sobremesa?`;
+        const temSobremesa = this.carrinho.itens.some(i => i.categoria === 'sobremesas');
+        if (!temSobremesa) {
+          this.aguardandoDado = 'sugestao';
+          sugestao = `\n\nPara fechar com chave de ouro, gostaria de um **Pudim** tradicional (R$ 7,00) de sobremesa?`;
+        } else {
+          this.aguardandoDado = null;
+        }
       }
 
       return {
@@ -493,7 +510,15 @@ export class DeterministicAgent {
     }
 
     // =========================================================================
-    // 16. RESPOSTA PADRÃO ACOLHEDORA E CONTEXTUALIZADA
+    // 16. RESPOSTAS CURTAS DE RECUSA OU PROSSEGUIMENTO ("não", "so isso", "pode ser")
+    // =========================================================================
+    const ehRecusaGenerica = /^(nao|não|n|nao quero|não quero|so isso|só isso|somente isso|sem sobremesa|sem bebida|mais nada|nada|deixa assim|deixa so|dispensa)$/i.test(texto);
+    if (ehRecusaGenerica && this.carrinho.itens.length > 0) {
+      return this.gerarPromptResumoConfirmacao(acoes, 'Combinado! Vamos prosseguir com os itens já adicionados. 👍');
+    }
+
+    // =========================================================================
+    // 17. RESPOSTA PADRÃO ACOLHEDORA E CONTEXTUALIZADA
     // =========================================================================
     return {
       resposta: 'Entendido! Como posso te atender agora? Posso te apresentar o cardápio do dia, adicionar bebidas, personalizar marmitas, aplicar cupons ou fechar seu pedido! 😊',

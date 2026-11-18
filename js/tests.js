@@ -231,5 +231,23 @@ export function runAllTests() {
     assert('Teste 17 - Continuidade de Estado (Nome isolado reconhecido)', perguntouNome && nomeGravado && continuouFluxo, `Nome gravado: "${chk.cliente.nome}"`);
   }
 
+  // TESTE 18 - Continuidade de Estado (Recusa natural a sugestão de sobremesa/bebida avança para checkout)
+  {
+    const cart = new Carrinho();
+    const chk = new CheckoutManager(cart);
+    const agent = new DeterministicAgent(cart, chk);
+
+    agent.processarMensagem('Quero uma marmita de frango');
+    // Adiciona suco -> bot sugere pudim de sobremesa
+    const respSuco = agent.processarMensagem('suco');
+    const sugeriuSobremesa = respSuco.resposta.includes('Pudim');
+
+    // Usuário responde apenas "nao"
+    const respRecusa = agent.processarMensagem('nao');
+    const avancouCheckout = respRecusa.resposta.includes('como posso te chamar') || respRecusa.resposta.includes('fecharmos o resumo');
+
+    assert('Teste 18 - Continuidade de Estado (Recusa de sobremesa com "nao" avança checkout)', sugeriuSobremesa && avancouCheckout, `Resposta recusa: ${respRecusa.resposta.slice(0, 50)}...`);
+  }
+
   return results;
 }
