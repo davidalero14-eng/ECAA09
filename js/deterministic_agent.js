@@ -97,6 +97,20 @@ export class DeterministicAgent {
 
         return this.gerarPromptResumoConfirmacao(acoes, `Forma de pagamento registrada: **${this.checkout.cliente.formaPagamento}**.`);
       }
+
+      // Tratamento para opções não aceitas (ex: cheque, fiado, boleto, etc.) mantendo o contexto ativo
+      if (texto.includes('cheque') || texto.includes('boleto') || texto.includes('fiado') || texto.includes('vale') || texto.includes('outro')) {
+        return {
+          resposta: `Poxa, infelizmente **não aceitamos essa forma de pagamento** no momento. 😕\n\nTrabalhamos apenas com:\n• **PIX**\n• **Cartão de Crédito ou Débito**\n• **Dinheiro** (com troco se precisar)\n\nQual dessas opções você prefere?`,
+          acoesExecutadas: acoes
+        };
+      }
+
+      // Se enviou qualquer outra coisa enquanto o bot aguarda pagamento, não reseta a conversa!
+      return {
+        resposta: `Ainda estou aguardando a forma de pagamento do seu pedido! 😊\n\nVocê prefere pagar com **PIX**, **Cartão (Crédito/Débito)** ou **Dinheiro**?`,
+        acoesExecutadas: acoes
+      };
     }
 
     // D. Aguardando Informação de Troco
@@ -518,10 +532,22 @@ export class DeterministicAgent {
     }
 
     // =========================================================================
-    // 17. RESPOSTA PADRÃO ACOLHEDORA E CONTEXTUALIZADA
+    // 17. RESPOSTA PADRÃO ACOLHEDORA, INTELIGENTE E CONTEXTUALIZADA
     // =========================================================================
+    const estado = this.carrinho.obterEstado();
+    if (!estado.vazio) {
+      const pendencias = this.checkout.obterPendencias();
+      if (pendencias.length > 0) {
+        return this.gerarPromptResumoConfirmacao(acoes, 'Entendido! Para continuarmos seu pedido com segurança:');
+      }
+      return {
+        resposta: `Seus itens já estão no carrinho! Posso te ajudar a finalizar seu pedido, adicionar bebidas ou aplicar cupons de desconto. O que deseja fazer agora? 😊`,
+        acoesExecutadas: acoes
+      };
+    }
+
     return {
-      resposta: 'Entendido! Como posso te atender agora? Posso te apresentar o cardápio do dia, adicionar bebidas, personalizar marmitas, aplicar cupons ou fechar seu pedido! 😊',
+      resposta: 'Não entendi direito essa opção, mas estou aqui para te ajudar! Posso te mostrar o **cardápio de hoje**, te indicar os pratos mais pedidos ou responder qualquer dúvida. O que você gostaria de ver? 😊',
       acoesExecutadas: acoes
     };
   }

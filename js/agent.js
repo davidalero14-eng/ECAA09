@@ -129,7 +129,7 @@ SITUAÇÃO ATUAL DO PEDIDO:
       console.warn('[AgentManager] Falha no Gemini, acionando fallback determinístico:', err.message);
       const resultadoFallback = this.deterministicAgent.processarMensagem(mensagemTexto);
       return {
-        resposta: resultadoFallback.resposta + '\n\n*(Nota: Resposta gerada via motor local devido a oscilação na API)*',
+        resposta: resultadoFallback.resposta,
         acoesExecutadas: resultadoFallback.acoesExecutadas,
         modoUsado: 'fallback',
         cards: resultadoFallback.cards || null

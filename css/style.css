@@ -1,34 +1,34 @@
 :root {
-  --primary: #e65100;
-  --primary-light: #ff833a;
-  --primary-dark: #ac1900;
-  --primary-bg: #fff5ec;
+  --primary: #ea580c;
+  --primary-light: #fb923c;
+  --primary-dark: #c2410c;
+  --primary-bg: #fff7ed;
   
-  --secondary: #d84315;
-  --accent: #2e7d32;
+  --secondary: #f97316;
+  --accent: #16a34a;
   
-  --bg-main: #fbf9f6;
+  --bg-main: #f8fafc;
   --bg-surface: #ffffff;
-  --bg-subtle: #f4ede4;
+  --bg-subtle: #f1f5f9;
   
-  --text-main: #2b2b2b;
-  --text-muted: #6c757d;
-  --text-light: #8e8e8e;
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  --text-light: #94a3b8;
   
-  --border-color: #ebdcd0;
-  --border-focus: #e65100;
+  --border-color: #e2e8f0;
+  --border-focus: #ea580c;
   
-  --shadow-sm: 0 2px 6px rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 14px rgba(230, 81, 0, 0.08);
-  --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.1);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03);
+  --shadow-md: 0 4px 16px -2px rgba(15, 23, 42, 0.08);
+  --shadow-lg: 0 12px 32px -4px rgba(15, 23, 42, 0.12);
 
   --radius-sm: 8px;
-  --radius-md: 14px;
-  --radius-lg: 20px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
   --radius-pill: 9999px;
   
-  --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  --transition: all 0.2s ease-in-out;
+  --font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 * {
@@ -47,11 +47,11 @@ body {
   overflow-x: hidden;
 }
 
-/* ==================== CABEÇALHO ==================== */
+/* ==================== CABEÇALHO LIMPO ==================== */
 .app-header {
   background: var(--bg-surface);
   border-bottom: 1px solid var(--border-color);
-  padding: 0.65rem 1.5rem;
+  padding: 0.6rem 1.5rem;
   box-shadow: var(--shadow-sm);
   position: sticky;
   top: 0;
@@ -70,31 +70,32 @@ body {
 .brand {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.65rem;
 }
 
 .brand-icon {
-  width: 44px;
-  height: 44px;
+  width: 40px;
+  height: 40px;
   background: linear-gradient(135deg, var(--primary), var(--secondary));
   color: #fff;
   border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.5rem;
-  box-shadow: 0 4px 10px rgba(230, 81, 0, 0.3);
+  font-size: 1.35rem;
+  box-shadow: 0 4px 10px rgba(234, 88, 12, 0.3);
+  flex-shrink: 0;
 }
 
 .brand-info h1 {
-  font-size: 1.25rem;
+  font-size: 1.2rem;
   font-weight: 800;
-  color: var(--primary-dark);
+  color: var(--text-main);
   letter-spacing: -0.5px;
 }
 
 .brand-info p {
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   color: var(--text-muted);
 }
 
@@ -193,12 +194,12 @@ body {
   margin: 0 auto;
   padding: 0.85rem 1.25rem;
   display: grid;
-  grid-template-columns: 1fr 390px;
-  gap: 1.25rem;
-  height: calc(100vh - 68px);
+  grid-template-columns: 1fr 370px;
+  gap: 1rem;
+  height: calc(100vh - 64px);
 }
 
-/* ==================== ÁREA DO CHAT ==================== */
+/* ==================== ÁREA DO CHAT - MODERNA E LIMPA ==================== */
 .chat-section {
   background: var(--bg-surface);
   border-radius: var(--radius-lg);
@@ -210,14 +211,15 @@ body {
 }
 
 .chat-banner-info {
-  background: linear-gradient(to right, var(--primary-bg), #fff);
-  padding: 0.55rem 1rem;
+  background: linear-gradient(to right, var(--primary-bg), #fff7f0);
+  padding: 0.5rem 1.25rem;
   border-bottom: 1px solid var(--border-color);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   color: var(--text-muted);
+  gap: 0.75rem;
 }
 
 .chat-banner-info span i {
@@ -233,18 +235,20 @@ body {
   flex-direction: column;
   gap: 1rem;
   scroll-behavior: smooth;
+  scrollbar-width: thin;
+  background: #fafafa;
 }
 
-/* Balões de Mensagens */
+/* Balões de Mensagens Modernizados e Limpos */
 .mensagem {
   display: flex;
   gap: 0.75rem;
-  max-width: 86%;
-  animation: fadeIn 0.25s ease-out;
+  max-width: 84%;
+  animation: fadeIn 0.22s ease-out;
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(6px); }
+  from { opacity: 0; transform: translateY(4px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
@@ -258,37 +262,39 @@ body {
 }
 
 .mensagem-avatar .avatar-circulo {
-  width: 38px;
-  height: 38px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
-  background: var(--primary-bg);
-  border: 2px solid var(--border-color);
+  background: var(--bg-surface);
+  border: 1.5px solid var(--border-color);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.25rem;
+  font-size: 1.2rem;
+  box-shadow: var(--shadow-sm);
 }
 
 .mensagem-conteudo {
-  background: var(--bg-subtle);
-  padding: 0.75rem 1rem;
-  border-radius: var(--radius-md);
+  padding: 0.85rem 1.15rem;
+  border-radius: 16px;
   position: relative;
-  font-size: 0.92rem;
-  line-height: 1.5;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  font-size: 0.94rem;
+  line-height: 1.55;
 }
 
 .mensagem-bot .mensagem-conteudo {
   background: #ffffff;
   border: 1px solid var(--border-color);
   border-top-left-radius: 4px;
+  color: var(--text-main);
+  box-shadow: var(--shadow-sm);
 }
 
 .mensagem-usuario .mensagem-conteudo {
   background: linear-gradient(135deg, var(--primary), var(--secondary));
   color: #ffffff;
   border-top-right-radius: 4px;
+  box-shadow: 0 4px 12px rgba(234, 88, 12, 0.25);
 }
 
 .mensagem-cabecalho {
@@ -327,8 +333,8 @@ body {
 }
 
 .badge-fallback {
-  background: #fff8e1;
-  color: #f57f17;
+  background: #fef9c3;
+  color: #92400e;
 }
 
 .mensagem-hora {
@@ -343,29 +349,31 @@ body {
   color: rgba(255, 255, 255, 0.8);
 }
 
-/* Cards Visuais de Produtos dentro do Chat */
+/* Cards Visuais de Produtos dentro do Chat - Design Limpo */
 .cards-produtos-container {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 0.6rem;
-  margin-top: 0.75rem;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 0.65rem;
+  margin-top: 0.85rem;
 }
 
 .card-produto-chat {
-  background: #faf7f2;
-  border: 1px solid #ebdcd0;
-  border-radius: var(--radius-sm);
-  padding: 0.65rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 0.75rem 0.85rem;
   display: flex;
   flex-direction: column;
   gap: 0.3rem;
   transition: var(--transition);
+  box-shadow: var(--shadow-sm);
 }
 
 .card-produto-chat:hover {
-  border-color: var(--primary);
-  background: #fff;
-  box-shadow: 0 2px 8px rgba(230, 81, 0, 0.1);
+  border-color: var(--primary-light);
+  background: var(--primary-bg);
+  box-shadow: 0 4px 12px rgba(234, 88, 12, 0.1);
+  transform: translateY(-2px);
 }
 
 .card-produto-header {
@@ -375,23 +383,25 @@ body {
 }
 
 .card-produto-tag {
-  font-size: 0.65rem;
-  background: #fff;
-  border: 1px solid #e0d0c0;
-  padding: 0.1rem 0.35rem;
+  font-size: 0.63rem;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-color);
+  padding: 0.1rem 0.4rem;
   border-radius: 4px;
   font-weight: 700;
   color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
 }
 
 .card-produto-preco {
-  font-size: 0.85rem;
+  font-size: 0.88rem;
   font-weight: 800;
   color: var(--primary-dark);
 }
 
 .card-produto-nome {
-  font-size: 0.85rem;
+  font-size: 0.88rem;
   font-weight: 700;
   color: var(--text-main);
 }
@@ -399,15 +409,15 @@ body {
 .card-produto-desc {
   font-size: 0.75rem;
   color: var(--text-muted);
-  line-height: 1.3;
+  line-height: 1.35;
 }
 
 .btn-card-pedir {
-  margin-top: 0.3rem;
-  background: var(--primary-bg);
-  border: 1px solid #fed7aa;
-  color: var(--primary-dark);
-  padding: 0.35rem 0.6rem;
+  margin-top: 0.4rem;
+  background: var(--primary);
+  border: none;
+  color: #fff;
+  padding: 0.4rem 0.75rem;
   border-radius: var(--radius-pill);
   font-size: 0.75rem;
   font-weight: 700;
@@ -420,9 +430,8 @@ body {
 }
 
 .btn-card-pedir:hover {
-  background: var(--primary);
-  color: #fff;
-  border-color: var(--primary);
+  background: var(--primary-dark);
+  transform: scale(1.03);
 }
 
 /* Indicador de Digitando */
@@ -465,38 +474,42 @@ body {
   40% { transform: translateY(-5px); }
 }
 
-/* Sugestões Rápidas */
+/* Sugestões Rápidas Modernas (Chips) */
 .quick-suggestions {
-  padding: 0.5rem 1rem;
+  padding: 0.6rem 1.25rem;
   display: flex;
-  gap: 0.5rem;
+  gap: 0.6rem;
   overflow-x: auto;
   border-top: 1px solid var(--border-color);
   background: var(--bg-surface);
+  scrollbar-width: thin;
 }
 
 .chip-btn {
   white-space: nowrap;
-  background: var(--primary-bg);
-  color: var(--primary-dark);
-  border: 1px solid #fed7aa;
-  padding: 0.4rem 0.85rem;
+  background: var(--bg-subtle);
+  color: var(--text-main);
+  border: 1px solid var(--border-color);
+  padding: 0.45rem 0.95rem;
   border-radius: var(--radius-pill);
-  font-size: 0.8rem;
+  font-size: 0.82rem;
   font-weight: 600;
   cursor: pointer;
   transition: var(--transition);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
 }
 
 .chip-btn:hover {
-  background: var(--primary);
-  color: #fff;
-  border-color: var(--primary);
+  background: var(--primary-bg);
+  color: var(--primary-dark);
+  border-color: var(--primary-light);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
 }
 
-/* Formulário de Input */
+/* Formulário de Input Moderno e Limpo */
 .chat-input-area {
-  padding: 0.85rem 1rem;
+  padding: 0.9rem 1.1rem;
   background: var(--bg-surface);
   border-top: 1px solid var(--border-color);
 }
@@ -504,31 +517,37 @@ body {
 .chat-form {
   display: flex;
   gap: 0.6rem;
+  align-items: center;
 }
 
 .chat-input {
   flex: 1;
-  padding: 0.75rem 1.1rem;
-  border: 1px solid var(--border-color);
+  padding: 0.8rem 1.2rem;
+  border: 1.5px solid var(--border-color);
   border-radius: var(--radius-pill);
   font-size: 0.95rem;
   outline: none;
   transition: var(--transition);
   background: var(--bg-subtle);
+  color: var(--text-main);
+}
+
+.chat-input::placeholder {
+  color: var(--text-light);
 }
 
 .chat-input:focus {
   background: #ffffff;
   border-color: var(--border-focus);
-  box-shadow: 0 0 0 3px rgba(230, 81, 0, 0.12);
+  box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.1);
 }
 
 .btn-send {
   background: linear-gradient(135deg, var(--primary), var(--secondary));
   color: #ffffff;
   border: none;
-  width: 44px;
-  height: 44px;
+  width: 46px;
+  height: 46px;
   border-radius: 50%;
   cursor: pointer;
   display: flex;
@@ -536,12 +555,13 @@ body {
   justify-content: center;
   font-size: 1.1rem;
   transition: var(--transition);
-  box-shadow: var(--shadow-md);
+  box-shadow: 0 4px 14px rgba(234, 88, 12, 0.3);
+  flex-shrink: 0;
 }
 
 .btn-send:hover {
-  transform: scale(1.05);
-  box-shadow: 0 6px 16px rgba(230, 81, 0, 0.25);
+  transform: scale(1.07);
+  box-shadow: 0 6px 20px rgba(234, 88, 12, 0.4);
 }
 
 /* ==================== PAINEL LATERAL (CARRINHO) ==================== */
@@ -574,18 +594,19 @@ body {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: 1.05rem;
+  font-size: 1rem;
   font-weight: 700;
-  color: var(--primary-dark);
+  color: var(--text-main);
 }
 
 .cart-items-list {
   flex: 1;
   overflow-y: auto;
-  padding: 1rem;
+  padding: 0.9rem;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.65rem;
+  scrollbar-width: thin;
 }
 
 .cart-empty {
@@ -599,17 +620,17 @@ body {
 }
 
 .cart-empty-icon {
-  font-size: 2.5rem;
-  margin-bottom: 0.75rem;
-  opacity: 0.5;
+  font-size: 2.2rem;
+  margin-bottom: 0.65rem;
+  opacity: 0.4;
 }
 
-/* Item individual no carrinho */
+/* Item individual no carrinho - Design Limpo */
 .cart-item {
-  background: var(--bg-main);
+  background: var(--bg-subtle);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
-  padding: 0.75rem;
+  padding: 0.7rem 0.85rem;
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
@@ -617,41 +638,44 @@ body {
 }
 
 .cart-item:hover {
-  border-color: #ffd8b8;
+  border-color: var(--primary-light);
+  background: #fff;
 }
 
 .cart-item-top {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
+  gap: 0.5rem;
 }
 
 .cart-item-name {
   font-weight: 700;
-  font-size: 0.9rem;
+  font-size: 0.88rem;
   color: var(--text-main);
 }
 
 .cart-item-price {
   font-weight: 700;
-  font-size: 0.9rem;
+  font-size: 0.88rem;
   color: var(--primary);
+  white-space: nowrap;
 }
 
 .cart-item-customizations {
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   color: var(--text-muted);
-  background: #fff;
-  padding: 0.3rem 0.5rem;
+  background: rgba(234, 88, 12, 0.05);
+  padding: 0.25rem 0.5rem;
   border-radius: 6px;
-  border-left: 3px solid var(--primary);
+  border-left: 2px solid var(--primary-light);
 }
 
 .cart-item-bottom {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-top: 0.2rem;
+  margin-top: 0.1rem;
 }
 
 .cart-qty-control {
@@ -665,44 +689,49 @@ body {
   height: 24px;
   border: 1px solid var(--border-color);
   background: #ffffff;
-  border-radius: 4px;
+  border-radius: 6px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.75rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  transition: var(--transition);
 }
 
 .btn-qty:hover {
   background: var(--primary-bg);
   border-color: var(--primary);
+  color: var(--primary);
 }
 
 .qty-number {
   font-size: 0.85rem;
-  font-weight: 600;
-  min-width: 18px;
+  font-weight: 700;
+  min-width: 20px;
   text-align: center;
 }
 
 .btn-remove-item {
   background: none;
   border: none;
-  color: #e53935;
+  color: var(--text-light);
   cursor: pointer;
   font-size: 0.8rem;
-  padding: 0.2rem;
+  padding: 0.2rem 0.4rem;
   border-radius: 4px;
+  transition: var(--transition);
 }
 
 .btn-remove-item:hover {
-  text-decoration: underline;
+  color: #dc2626;
+  background: #fef2f2;
 }
 
 /* Área de Cupons no Carrinho */
 .cart-coupon-area {
-  padding: 0.6rem 1.25rem;
-  background: #faf7f2;
+  padding: 0.65rem 1.25rem;
+  background: var(--bg-subtle);
   border-top: 1px solid var(--border-color);
 }
 
@@ -718,26 +747,39 @@ body {
   border-radius: var(--radius-sm);
   font-size: 0.8rem;
   text-transform: uppercase;
+  background: #fff;
+  outline: none;
+  transition: var(--transition);
+}
+
+.input-coupon:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(234, 88, 12, 0.08);
 }
 
 .btn-apply-coupon {
   background: var(--primary);
   color: #fff;
   border: none;
-  padding: 0.45rem 0.8rem;
+  padding: 0.45rem 0.85rem;
   border-radius: var(--radius-sm);
   font-size: 0.78rem;
   font-weight: 700;
   cursor: pointer;
+  transition: var(--transition);
+}
+
+.btn-apply-coupon:hover {
+  background: var(--primary-dark);
 }
 
 .applied-coupon-badge {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: #e8f5e9;
-  border: 1px solid #c8e6c9;
-  color: #2e7d32;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #15803d;
   padding: 0.35rem 0.65rem;
   border-radius: var(--radius-sm);
   font-size: 0.78rem;
@@ -747,40 +789,40 @@ body {
 .btn-remove-coupon {
   background: none;
   border: none;
-  color: #c62828;
+  color: #dc2626;
   cursor: pointer;
   font-size: 0.85rem;
 }
 
 /* Rodapé do Carrinho com Totais */
 .cart-footer {
-  padding: 0.85rem 1.25rem;
+  padding: 0.9rem 1.25rem;
   border-top: 1px solid var(--border-color);
   background: #ffffff;
   display: flex;
   flex-direction: column;
-  gap: 0.45rem;
+  gap: 0.4rem;
 }
 
 .summary-row {
   display: flex;
   justify-content: space-between;
-  font-size: 0.85rem;
+  font-size: 0.84rem;
   color: var(--text-muted);
 }
 
 .summary-discount {
-  color: #2e7d32;
+  color: #16a34a;
   font-weight: 600;
 }
 
 .summary-total {
-  font-size: 1.1rem;
+  font-size: 1.08rem;
   font-weight: 800;
   color: var(--text-main);
   border-top: 1px dashed var(--border-color);
   padding-top: 0.5rem;
-  margin-top: 0.25rem;
+  margin-top: 0.2rem;
 }
 
 .summary-total .total-valor {
@@ -788,11 +830,11 @@ body {
 }
 
 .cart-btn-checkout {
-  margin-top: 0.4rem;
-  background: linear-gradient(135deg, #2e7d32, #1b5e20);
+  margin-top: 0.5rem;
+  background: linear-gradient(135deg, #16a34a, #15803d);
   color: #fff;
   border: none;
-  padding: 0.75rem;
+  padding: 0.78rem;
   border-radius: var(--radius-pill);
   font-weight: 700;
   font-size: 0.95rem;
@@ -802,11 +844,13 @@ body {
   justify-content: center;
   gap: 0.5rem;
   transition: var(--transition);
+  box-shadow: 0 4px 14px rgba(22, 163, 74, 0.25);
 }
 
 .cart-btn-checkout:hover {
-  background: #1b5e20;
-  box-shadow: 0 4px 12px rgba(46, 125, 50, 0.25);
+  background: linear-gradient(135deg, #15803d, #14532d);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(22, 163, 74, 0.35);
 }
 
 /* ==================== MODAIS GERAIS ==================== */
@@ -816,13 +860,13 @@ body {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(15, 23, 42, 0.45);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
   padding: 1rem;
-  backdrop-filter: blur(3px);
+  backdrop-filter: blur(4px);
 }
 
 .modal-overlay.oculto {
@@ -836,15 +880,20 @@ body {
   width: 100%;
   box-shadow: var(--shadow-lg);
   overflow: hidden;
-  animation: scaleUp 0.2s ease-out;
+  animation: scaleUp 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
   max-height: 90vh;
   display: flex;
   flex-direction: column;
 }
 
 @keyframes scaleUp {
-  from { transform: scale(0.95); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes scaleUp {
+  from { opacity: 0; transform: scale(0.95) translateY(4px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
 }
 
 .modal-header {
@@ -857,11 +906,12 @@ body {
 }
 
 .modal-header h3 {
-  font-size: 1.15rem;
+  font-size: 1.1rem;
   color: var(--text-main);
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  font-weight: 700;
 }
 
 .btn-close-modal {
@@ -870,6 +920,18 @@ body {
   font-size: 1.25rem;
   cursor: pointer;
   color: var(--text-muted);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition);
+}
+
+.btn-close-modal:hover {
+  background: var(--bg-subtle);
+  color: var(--text-main);
 }
 
 .modal-body {
@@ -878,17 +940,17 @@ body {
   flex-direction: column;
   gap: 1rem;
   font-size: 0.9rem;
-  line-height: 1.5;
+  line-height: 1.55;
   overflow-y: auto;
 }
 
 .info-box {
-  background: #e8f4fd;
-  border-left: 4px solid #0288d1;
+  background: #eff6ff;
+  border-left: 3px solid #3b82f6;
   padding: 0.75rem 1rem;
-  border-radius: 4px;
-  font-size: 0.85rem;
-  color: #01579b;
+  border-radius: var(--radius-sm);
+  font-size: 0.84rem;
+  color: #1d4ed8;
 }
 
 .form-group {
@@ -900,11 +962,12 @@ body {
 .form-group label {
   font-weight: 600;
   font-size: 0.85rem;
+  color: var(--text-main);
 }
 
 .input-text {
   padding: 0.65rem 0.85rem;
-  border: 1px solid var(--border-color);
+  border: 1.5px solid var(--border-color);
   border-radius: var(--radius-sm);
   font-size: 0.9rem;
   outline: none;
