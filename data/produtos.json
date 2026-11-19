@@ -1,0 +1,258 @@
+{
+  "configuracoes": {
+    "taxa_entrega_padrao": 5.00,
+    "dias_semana": ["domingo", "segunda", "terca", "quarta", "quinta", "sexta", "sabado"],
+    "dias_semana_nomes": {
+      "domingo": "Domingo",
+      "segunda": "Segunda-feira",
+      "terca": "Terça-feira",
+      "quarta": "Quarta-feira",
+      "quinta": "Quinta-feira",
+      "sexta": "Sexta-feira",
+      "sabado": "Sábado"
+    },
+    "categorias": {
+      "MARMITAS": "marmitas",
+      "BEBIDAS": "bebidas",
+      "SOBREMESAS": "sobremesas"
+    },
+    "cupons_validos": {
+      "PRIMEIRACOMPRA": {
+        "codigo": "PRIMEIRACOMPRA",
+        "tipo": "fixo",
+        "valor": 5.00,
+        "descricao": "R$ 5,00 de desconto de boas-vindas"
+      },
+      "MARMITAE10": {
+        "codigo": "MARMITAE10",
+        "tipo": "porcentagem",
+        "valor": 0.10,
+        "descricao": "10% de desconto no total dos pratos"
+      },
+      "FRETEGRATIS": {
+        "codigo": "FRETEGRATIS",
+        "tipo": "frete_gratis",
+        "valor": 5.00,
+        "descricao": "Taxa de entrega gratuita"
+      }
+    }
+  },
+  "produtos": [
+    {
+      "id": "marmita-frango-grelhado",
+      "nome": "Frango Grelhado",
+      "categoria": "marmitas",
+      "descricao": "Filé de frango grelhado suculento, arroz branco, feijão carioca e legumes no vapor.",
+      "preco": 21.90,
+      "disponibilidade": true,
+      "dias_disponiveis": ["segunda", "terca", "quarta", "quinta", "sexta", "sabado"],
+      "ingredientes_padrao": ["Frango grelhado", "Arroz branco", "Feijão carioca", "Legumes no vapor"],
+      "acompanhamentos_permitidos": ["Arroz branco", "Arroz integral", "Feijão carioca", "Feijão preto", "Legumes no vapor", "Batata frita", "Purê de batata", "Salada da casa"],
+      "personalizacoes_possiveis": {
+        "remocoes": ["sem feijão", "sem arroz", "sem legumes", "sem sal", "pouco sal", "sem alho"],
+        "trocas": [
+          { "de": "Arroz branco", "para": ["Arroz integral"] },
+          { "de": "Feijão carioca", "para": ["Feijão preto"] },
+          { "de": "Legumes no vapor", "para": ["Purê de batata", "Batata frita", "Salada da casa"] }
+        ],
+        "pontos_carne": null
+      },
+      "sugestoes_harmonizacao": ["suco-natural-300ml", "pudim-tradicional"]
+    },
+    {
+      "id": "marmita-bife-acebolado",
+      "nome": "Bife Acebolado",
+      "categoria": "marmitas",
+      "descricao": "Bife bovino macio acebolado, arroz soltinho, feijão caseiro e batata frita crocante.",
+      "preco": 24.90,
+      "disponibilidade": true,
+      "dias_disponiveis": ["segunda", "terca", "quarta", "quinta", "sexta", "sabado"],
+      "ingredientes_padrao": ["Bife bovino", "Cebola fatiada", "Arroz branco", "Feijão carioca", "Batata frita"],
+      "acompanhamentos_permitidos": ["Arroz branco", "Arroz integral", "Feijão carioca", "Feijão preto", "Batata frita", "Purê de batata", "Salada da casa", "Legumes no vapor"],
+      "personalizacoes_possiveis": {
+        "remocoes": ["sem cebola", "sem feijão", "sem arroz", "sem batata", "sem sal", "pouco sal", "pouco óleo"],
+        "trocas": [
+          { "de": "Batata frita", "para": ["Purê de batata", "Salada da casa", "Legumes no vapor"] },
+          { "de": "Feijão carioca", "para": ["Feijão preto"] },
+          { "de": "Arroz branco", "para": ["Arroz integral"] }
+        ],
+        "pontos_carne": ["mal passado", "ao ponto", "bem passado"]
+      },
+      "sugestoes_harmonizacao": ["refri-lata-350ml", "pudim-tradicional"]
+    },
+    {
+      "id": "marmita-strogonoff-frango",
+      "nome": "Strogonoff de Frango",
+      "categoria": "marmitas",
+      "descricao": "Strogonoff de frango cremoso com champignon suave, arroz branco e batata palha artesanal.",
+      "preco": 23.90,
+      "disponibilidade": true,
+      "dias_disponiveis": ["segunda", "quarta", "sexta", "sabado"],
+      "ingredientes_padrao": ["Strogonoff de frango", "Arroz branco", "Batata palha"],
+      "acompanhamentos_permitidos": ["Arroz branco", "Arroz integral", "Batata palha", "Purê de batata", "Salada da casa"],
+      "personalizacoes_possiveis": {
+        "remocoes": ["sem champignon", "sem batata palha", "sem arroz", "mais molho", "pouco molho"],
+        "trocas": [
+          { "de": "Batata palha", "para": ["Purê de batata", "Salada da casa"] },
+          { "de": "Arroz branco", "para": ["Arroz integral"] }
+        ],
+        "pontos_carne": null
+      },
+      "sugestoes_harmonizacao": ["suco-natural-300ml", "mousse-maracuja"]
+    },
+    {
+      "id": "marmita-carne-panela",
+      "nome": "Carne de Panela",
+      "categoria": "marmitas",
+      "descricao": "Carne bovina de panela cozida lentamente ao molho encorpado, arroz, feijão e purê de batatas.",
+      "preco": 25.90,
+      "disponibilidade": true,
+      "dias_disponiveis": ["terca", "quinta", "sabado"],
+      "ingredientes_padrao": ["Carne cozida com molho", "Arroz branco", "Feijão carioca", "Purê de batata"],
+      "acompanhamentos_permitidos": ["Arroz branco", "Arroz integral", "Feijão carioca", "Feijão preto", "Purê de batata", "Batata frita", "Legumes no vapor", "Salada da casa"],
+      "personalizacoes_possiveis": {
+        "remocoes": ["sem molho", "pouco molho", "sem cebola", "sem feijão", "sem purê", "sem arroz"],
+        "trocas": [
+          { "de": "Purê de batata", "para": ["Batata frita", "Legumes no vapor", "Salada da casa"] },
+          { "de": "Feijão carioca", "para": ["Feijão preto"] }
+        ],
+        "pontos_carne": null
+      },
+      "sugestoes_harmonizacao": ["refri-600ml", "brigadeiro-gourmet"]
+    },
+    {
+      "id": "marmita-parmegiana-frango",
+      "nome": "Parmegiana de Frango",
+      "categoria": "marmitas",
+      "descricao": "Filé de frango empanado, coberto com queijo derretido e molho de tomate rústico, arroz e batata frita.",
+      "preco": 27.90,
+      "disponibilidade": true,
+      "dias_disponiveis": ["segunda", "quarta", "sexta", "sabado"],
+      "ingredientes_padrao": ["Filé de frango empanado", "Queijo muçarela", "Molho de tomate", "Arroz branco", "Batata frita"],
+      "acompanhamentos_permitidos": ["Arroz branco", "Arroz integral", "Batata frita", "Purê de batata", "Salada da casa"],
+      "personalizacoes_possiveis": {
+        "remocoes": ["molho separado", "sem batata frita", "sem arroz"],
+        "trocas": [
+          { "de": "Batata frita", "para": ["Purê de batata", "Salada da casa"] },
+          { "de": "Arroz branco", "para": ["Arroz integral"] }
+        ],
+        "pontos_carne": null
+      },
+      "sugestoes_harmonizacao": ["refri-lata-350ml", "mousse-maracuja"]
+    },
+    {
+      "id": "marmita-vegetariana",
+      "nome": "Marmita Vegetariana",
+      "categoria": "marmitas",
+      "descricao": "Omelete de forno com ervas finas, mix de legumes frescos salteados no azeite, arroz branco e feijão.",
+      "preco": 21.90,
+      "disponibilidade": true,
+      "dias_disponiveis": ["segunda", "terca", "quarta", "quinta", "sexta", "sabado"],
+      "ingredientes_padrao": ["Omelete de forno", "Legumes salteados", "Arroz branco", "Feijão carioca"],
+      "acompanhamentos_permitidos": ["Arroz branco", "Arroz integral", "Feijão carioca", "Feijão preto", "Legumes salteados", "Purê de batata", "Salada da casa"],
+      "personalizacoes_possiveis": {
+        "remocoes": ["sem cebola", "sem alho", "pouco sal", "sem feijão", "sem arroz"],
+        "trocas": [
+          { "de": "Arroz branco", "para": ["Arroz integral"] },
+          { "de": "Feijão carioca", "para": ["Feijão preto"] },
+          { "de": "Legumes salteados", "para": ["Salada da casa", "Purê de batata"] }
+        ],
+        "pontos_carne": null
+      },
+      "sugestoes_harmonizacao": ["agua-mineral-500ml", "suco-natural-300ml", "pudim-tradicional"]
+    },
+    {
+      "id": "refri-lata-350ml",
+      "nome": "Refrigerante lata 350 ml",
+      "categoria": "bebidas",
+      "descricao": "Coca-Cola, Guaraná Antarctica ou Coca Zero geladinhos (informe a preferência).",
+      "preco": 6.00,
+      "disponibilidade": true,
+      "dias_disponiveis": ["domingo", "segunda", "terca", "quarta", "quinta", "sexta", "sabado"],
+      "ingredientes_padrao": ["Refrigerante lata 350 ml"],
+      "acompanhamentos_permitidos": [],
+      "personalizacoes_possiveis": {
+        "opcoes_sabor": ["Coca-Cola Normal", "Coca-Cola Zero", "Guaraná Antarctica", "Guaraná Zero"]
+      }
+    },
+    {
+      "id": "suco-natural-300ml",
+      "nome": "Suco natural 300 ml",
+      "categoria": "bebidas",
+      "descricao": "Suco natural feito na hora de Laranja, Limão ou Maracujá.",
+      "preco": 7.00,
+      "disponibilidade": true,
+      "dias_disponiveis": ["segunda", "terca", "quarta", "quinta", "sexta", "sabado"],
+      "ingredientes_padrao": ["Suco natural 300 ml"],
+      "acompanhamentos_permitidos": [],
+      "personalizacoes_possiveis": {
+        "opcoes_sabor": ["Laranja", "Limão", "Maracujá"],
+        "remocoes": ["sem açúcar", "com adoçante", "sem gelo"]
+      }
+    },
+    {
+      "id": "agua-mineral-500ml",
+      "nome": "Água mineral 500 ml",
+      "categoria": "bebidas",
+      "descricao": "Água mineral fresca garrafa 500 ml, com ou sem gás.",
+      "preco": 3.50,
+      "disponibilidade": true,
+      "dias_disponiveis": ["domingo", "segunda", "terca", "quarta", "quinta", "sexta", "sabado"],
+      "ingredientes_padrao": ["Água mineral 500 ml"],
+      "acompanhamentos_permitidos": [],
+      "personalizacoes_possiveis": {
+        "opcoes_sabor": ["Sem gás", "Com gás"]
+      }
+    },
+    {
+      "id": "refri-600ml",
+      "nome": "Refrigerante 600 ml",
+      "categoria": "bebidas",
+      "descricao": "Garrafa 600 ml de Coca-Cola ou Guaraná Antarctica para matar a sede.",
+      "preco": 8.00,
+      "disponibilidade": true,
+      "dias_disponiveis": ["domingo", "segunda", "terca", "quarta", "quinta", "sexta", "sabado"],
+      "ingredientes_padrao": ["Refrigerante garrafa 600 ml"],
+      "acompanhamentos_permitidos": [],
+      "personalizacoes_possiveis": {
+        "opcoes_sabor": ["Coca-Cola Normal", "Coca-Cola Zero", "Guaraná Antarctica"]
+      }
+    },
+    {
+      "id": "pudim-tradicional",
+      "nome": "Pudim",
+      "categoria": "sobremesas",
+      "descricao": "Fatia generosa de pudim de leite condensado tradicional com calda de caramelo dourada.",
+      "preco": 7.00,
+      "disponibilidade": true,
+      "dias_disponiveis": ["segunda", "terca", "quarta", "quinta", "sexta", "sabado"],
+      "ingredientes_padrao": ["Leite condensado", "Leite", "Ovos", "Calda de caramelo"],
+      "acompanhamentos_permitidos": [],
+      "personalizacoes_possiveis": {}
+    },
+    {
+      "id": "mousse-maracuja",
+      "nome": "Mousse de maracujá",
+      "categoria": "sobremesas",
+      "descricao": "Mousse aerado de maracujá com sementinhas e calda azedinha deliciosa.",
+      "preco": 6.50,
+      "disponibilidade": true,
+      "dias_disponiveis": ["segunda", "terca", "quarta", "quinta", "sexta", "sabado"],
+      "ingredientes_padrao": ["Polpa de maracujá", "Creme de leite", "Leite condensado"],
+      "acompanhamentos_permitidos": [],
+      "personalizacoes_possiveis": {}
+    },
+    {
+      "id": "brigadeiro-gourmet",
+      "nome": "Brigadeiro",
+      "categoria": "sobremesas",
+      "descricao": "Unidade grande (40g) de brigadeiro de panela com chocolate nobre e confeitos crocantes.",
+      "preco": 4.00,
+      "disponibilidade": true,
+      "dias_disponiveis": ["segunda", "terca", "quarta", "quinta", "sexta", "sabado"],
+      "ingredientes_padrao": ["Chocolate", "Leite condensado", "Manteiga"],
+      "acompanhamentos_permitidos": [],
+      "personalizacoes_possiveis": {}
+    }
+  ]
+}

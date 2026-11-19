@@ -7,6 +7,9 @@
 
 import { CARDAPIO, consultarCardapio, buscarProdutoPorNome, buscarProdutoPorId, getDiaAtual, DIAS_SEMANA_NOMES, CUPONS_VALIDOS } from './menu.js';
 import { FORMAS_PAGAMENTO } from './checkout.js';
+import { SemanticMatcher, NLPProcessor } from './nlp_engine.js';
+import { BASE_INTENCOES, inicializarIntents } from './intents_data.js';
+import { Eliza } from './eliza.js';
 
 export class DeterministicAgent {
   constructor(carrinho, checkout) {
@@ -14,6 +17,16 @@ export class DeterministicAgent {
     this.checkout = checkout;
     this.ultimoItemMencionadoId = null;
     this.aguardandoDado = null; // 'nome' | 'endereco' | 'formaPagamento' | 'troco' | 'sugestao'
+
+    this._inicializado = false;
+    this.eliza = new Eliza();
+  }
+
+  async inicializar() {
+    if (this._inicializado) return;
+    await inicializarIntents();
+    this.semanticMatcher = new SemanticMatcher(BASE_INTENCOES);
+    this._inicializado = true;
   }
 
   reset() {
@@ -53,7 +66,7 @@ export class DeterministicAgent {
         acoes.push({ tipo: 'definir_nome', nome: nomeLimpo });
 
         // Continua o fluxo imediatamente para o próximo dado pendente
-        return this.gerarPromptResumoConfirmacao(acoes, `Prazer em te atender, **${nomeLimpo}**! 😄`);
+        return this.gerarPromptResumoConfirmacao(acoes, `Prazer em te atender, **${nomeLimpo}**! 😄`, 'deterministico');
       }
     }
 
@@ -65,7 +78,7 @@ export class DeterministicAgent {
         this.aguardandoDado = null;
         acoes.push({ tipo: 'definir_entrega', tipo: 'entrega', endereco: raw });
 
-        return this.gerarPromptResumoConfirmacao(acoes, `Endereço de entrega anotado com sucesso! 🛵 (Taxa de entrega: R$ 5,00).`);
+        return this.gerarPromptResumoConfirmacao(acoes, `Endereço de entrega anotado com sucesso! 🛵 (Taxa de entrega: R$ 5,00).`, 'deterministico');
       }
     }
 
@@ -95,7 +108,7 @@ export class DeterministicAgent {
           };
         }
 
-        return this.gerarPromptResumoConfirmacao(acoes, `Forma de pagamento registrada: **${this.checkout.cliente.formaPagamento}**.`);
+        return this.gerarPromptResumoConfirmacao(acoes, `Forma de pagamento registrada: **${this.checkout.cliente.formaPagamento}**.`, 'deterministico');
       }
 
       // Tratamento para opções não aceitas (ex: cheque, fiado, boleto, etc.) mantendo o contexto ativo
@@ -121,7 +134,7 @@ export class DeterministicAgent {
         this.checkout.cliente.trocoPara = valTroco;
       }
       this.aguardandoDado = null;
-      return this.gerarPromptResumoConfirmacao(acoes, `Perfeito! Levamos troco certinho.`);
+      return this.gerarPromptResumoConfirmacao(acoes, `Perfeito! Levamos troco certinho.`, 'deterministico');
     }
 
     // E. Aguardando Resposta a uma Sugestão Adicional (bebida, sobremesa, etc.)
@@ -130,7 +143,7 @@ export class DeterministicAgent {
                        texto.includes('nao quero') || texto.includes('não quero') || texto.includes('so isso') || texto.includes('mais nada');
       if (ehRecusa) {
         this.aguardandoDado = null;
-        return this.gerarPromptResumoConfirmacao(acoes, 'Sem problemas! Vamos prosseguir com o seu pedido. 👍');
+        return this.gerarPromptResumoConfirmacao(acoes, 'Sem problemas! Vamos prosseguir com o seu pedido. 👍', 'deterministico');
       }
     }
 
@@ -476,7 +489,7 @@ export class DeterministicAgent {
         };
       }
 
-      return this.gerarPromptResumoConfirmacao(acoes);
+      return this.gerarPromptResumoConfirmacao(acoes, '', 'deterministico');
     }
 
     // =========================================================================
@@ -502,7 +515,7 @@ export class DeterministicAgent {
     // 14. FINALIZAÇÃO / CHECKOUT
     // =========================================================================
     if (texto.includes('finalizar') || texto.includes('fechar') || texto.includes('concluir') || texto.includes('tudo certo')) {
-      return this.gerarPromptResumoConfirmacao(acoes);
+      return this.gerarPromptResumoConfirmacao(acoes, '', 'deterministico');
     }
 
     // =========================================================================
@@ -532,23 +545,115 @@ export class DeterministicAgent {
     }
 
     // =========================================================================
-    // 17. RESPOSTA PADRÃO ACOLHEDORA, INTELIGENTE E CONTEXTUALIZADA
+    // 17. CAMADA ELIZA: CONVERSAÇÃO NATURAL BASEADA EM PADRÕES (WEIZENBAUM 1966)
+    // =========================================================================
+    // Processa mensagens conversacionais que não foram capturadas pelas regras determinísticas
+    // O ELIZA NÃO executa ações comerciais - apenas gera resposta conversacional
+    const elizaResultado = this.eliza.processar(raw);
+    if (elizaResultado.resposta && elizaResultado.resposta.trim()) {
+      // Adiciona info do ELIZA às ações para diagnóstico
+      acoes.push({
+        tipo: 'eliza_conversa',
+        diagnostico: elizaResultado.diagnostico
+      });
+      return {
+        resposta: elizaResultado.resposta,
+        acoesExecutadas: acoes,
+        modoUsado: 'eliza'
+      };
+    }
+
+    // =========================================================================
+    // 18. CAMADA DE IA CLÁSSICA: CLASSIFICAÇÃO SEMÂNTICA VETORIAL (TF-IDF + COSSENO >= 0.65)
+    // =========================================================================
+    // Quando as regras determinísticas, ELIZA e regex não cobrem a frase, aciona a Similaridade de Cosseno:
+    const resultadoSemantico = this.semanticMatcher.classificar(raw, 0.65);
+    if (resultadoSemantico.match && resultadoSemantico.item) {
+      const itemIntencao = resultadoSemantico.item;
+      acoes.push({
+        tipo: 'intencao_semantica',
+        tag: resultadoSemantico.tag,
+        score: resultadoSemantico.score,
+        exemplo: resultadoSemantico.exemploMaisProximo
+      });
+
+      // Executa ação associada à intenção semântica (se houver)
+      if (itemIntencao.acao === 'consultar_cardapio') {
+        const diaAtual = getDiaAtual();
+        const disponiveisHoje = consultarCardapio(diaAtual, 'marmitas');
+        return {
+          resposta: itemIntencao.resposta,
+          acoesExecutadas: acoes,
+          cards: disponiveisHoje,
+          similaridadeScore: resultadoSemantico.score,
+          modoUsado: 'nlp'
+        };
+      } else if (itemIntencao.acao === 'consultar_vegetariana') {
+        const veg = CARDAPIO.find(p => p.id === 'marmita-vegetariana');
+        return {
+          resposta: itemIntencao.resposta,
+          acoesExecutadas: acoes,
+          cards: veg ? [veg] : null,
+          similaridadeScore: resultadoSemantico.score,
+          modoUsado: 'nlp'
+        };
+      } else if (itemIntencao.acao === 'consultar_bebidas') {
+        const bebidas = CARDAPIO.filter(p => p.categoria === 'bebidas');
+        return {
+          resposta: itemIntencao.resposta,
+          acoesExecutadas: acoes,
+          cards: bebidas,
+          similaridadeScore: resultadoSemantico.score,
+          modoUsado: 'nlp'
+        };
+      } else if (itemIntencao.acao === 'consultar_sobremesas') {
+        const doces = CARDAPIO.filter(p => p.categoria === 'sobremesas');
+        return {
+          resposta: itemIntencao.resposta,
+          acoesExecutadas: acoes,
+          cards: doces,
+          similaridadeScore: resultadoSemantico.score,
+          modoUsado: 'nlp'
+        };
+      } else if (itemIntencao.acao === 'limpar_carrinho') {
+        this.carrinho.limparCarrinho();
+        this.checkout.reset();
+        this.reset();
+        return {
+          resposta: itemIntencao.resposta,
+          acoesExecutadas: acoes,
+          similaridadeScore: resultadoSemantico.score,
+          modoUsado: 'nlp'
+        };
+      }
+
+      return {
+        resposta: itemIntencao.resposta,
+        acoesExecutadas: acoes,
+        similaridadeScore: resultadoSemantico.score
+      };
+    }
+
+    // =========================================================================
+    // 18. RESPOSTA PADRÃO ACOLHEDORA, INTELIGENTE E CONTEXTUALIZADA (FALLBACK)
     // =========================================================================
     const estado = this.carrinho.obterEstado();
     if (!estado.vazio) {
       const pendencias = this.checkout.obterPendencias();
       if (pendencias.length > 0) {
-        return this.gerarPromptResumoConfirmacao(acoes, 'Entendido! Para continuarmos seu pedido com segurança:');
+        return this.gerarPromptResumoConfirmacao(acoes, 'Entendido! Para continuarmos seu pedido com segurança:', 'fallback');
       }
       return {
         resposta: `Seus itens já estão no carrinho! Posso te ajudar a finalizar seu pedido, adicionar bebidas ou aplicar cupons de desconto. O que deseja fazer agora? 😊`,
-        acoesExecutadas: acoes
+        acoesExecutadas: acoes,
+        modoUsado: 'fallback'
       };
     }
 
     return {
       resposta: 'Não entendi direito essa opção, mas estou aqui para te ajudar! Posso te mostrar o **cardápio de hoje**, te indicar os pratos mais pedidos ou responder qualquer dúvida. O que você gostaria de ver? 😊',
-      acoesExecutadas: acoes
+      acoesExecutadas: acoes,
+      modoUsado: 'fallback'
     };
   }
 
@@ -654,12 +759,13 @@ export class DeterministicAgent {
     return list;
   }
 
-  gerarPromptResumoConfirmacao(acoes, mensagemPrefacio = '') {
+  gerarPromptResumoConfirmacao(acoes, mensagemPrefacio = '', modoUsado = 'deterministico') {
     const estado = this.carrinho.obterEstado();
     if (estado.vazio) {
       return {
         resposta: 'Seu carrinho ainda está vazio. Escolha pelo menos uma marmita ou bebida para fecharmos seu pedido!',
-        acoesExecutadas: acoes
+        acoesExecutadas: acoes,
+        modoUsado: modoUsado
       };
     }
 
@@ -671,7 +777,8 @@ export class DeterministicAgent {
       const pref = mensagemPrefacio ? `${mensagemPrefacio}\n\n` : '';
       return {
         resposta: `${pref}Ótimo! Antes de fecharmos o resumo, **como posso te chamar?** (Informe seu nome por favor).`,
-        acoesExecutadas: acoes
+        acoesExecutadas: acoes,
+        modoUsado: modoUsado
       };
     }
 
@@ -681,7 +788,8 @@ export class DeterministicAgent {
       const pref = mensagemPrefacio ? `${mensagemPrefacio}\n\n` : '';
       return {
         resposta: `${pref}Maravilha, **${this.checkout.cliente.nome}**! Por favor, me informe o **endereço de entrega** completo (Rua, Número e Bairro). 🛵`,
-        acoesExecutadas: acoes
+        acoesExecutadas: acoes,
+        modoUsado: modoUsado
       };
     }
 
@@ -691,7 +799,8 @@ export class DeterministicAgent {
       const pref = mensagemPrefacio ? `${mensagemPrefacio}\n\n` : '';
       return {
         resposta: `${pref}Perfeito, **${this.checkout.cliente.nome}**! Como você gostaria de realizar o pagamento? Aceitamos:\n• **PIX**\n• **Cartão de Crédito ou Débito** na entrega\n• **Dinheiro** (informe se precisar de troco)`,
-        acoesExecutadas: acoes
+        acoesExecutadas: acoes,
+        modoUsado: modoUsado
       };
     }
 
@@ -710,7 +819,71 @@ export class DeterministicAgent {
 
     return {
       resposta: textoResumo,
-      acoesExecutadas: acoes
+      acoesExecutadas: acoes,
+      modoUsado: modoUsado
+    };
+  }
+
+  /**
+   * Retorna diagnóstico completo do processamento NLP para a última mensagem.
+   * @param {string} mensagemTexto
+   * @returns {object} Diagnóstico detalhado
+   */
+  diagnosticarNLP(mensagemTexto) {
+    if (!this._inicializado || !this.semanticMatcher) {
+      return { erro: 'Agente não inicializado' };
+    }
+    
+    // Executa ELIZA para diagnóstico
+    const elizaDiag = this.eliza.processar(mensagemTexto);
+    
+    const diag = this.semanticMatcher.diagnosticar(mensagemTexto);
+    
+    // Determina qual método seria usado baseado no processamento
+    const texto = mensagemTexto.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    let metodoUsado = 'regras';
+    
+    // Lista simplificada de padrões que seriam capturados por regras
+    const padroesRegras = [
+      /^(ola|oi|bom dia|boa tarde|boa noite)/,
+      /(obrigad|valeu|agradec)/,
+      /(cancelar|tira|remove|exclui)/,
+      /(retirar|retirada|buscar no local|passo ai|pegar ai)/,
+      /(entrega|entregar|rua|av\.|avenida|bairro)/,
+      /(pix|dinheiro|credito|debito|cartao)/,
+      /(finalizar|fechar|concluir|tudo certo)/,
+      /(nao|não|n|nao quero|não quero|so isso|só isso|somente isso|sem sobremesa|sem bebida|mais nada|nada|deixa assim|deixa so|dispensa)$/,
+      /(cupom|desconto|promocao|promoção)/,
+      /(horario|que horas|funcionamento)/,
+      /(onde fica|endereco de voces|localizacao|onde retirar)/,
+      /(formas de pagamento|como posso pagar|aceita cartao|aceita pix)/,
+      /(quanto|total|carrinho|valor)/,
+      /(mais pedid|mais vendid|recomenda|sugestao)/,
+      /(vegetariana|sem carne|opcao vegetariana|vegan)/,
+      /(taxa de entrega|quanto e o frete|valor do frete|valor da entrega)/,
+      /(cardapio|opcoes|opções|o que tem|quais sao os pratos|marmitas de hoje)/,
+      /(bebida|sobremesa)/,
+      /(troca|sem |tira |com |passado|pure no lugar)/,
+      /(quer|quero|manda|gostaria|pedir)/
+    ];
+    
+    const capturadoPorRegra = padroesRegras.some(p => p.test(texto));
+    
+    if (capturadoPorRegra) {
+      metodoUsado = 'regras (prioritário)';
+    } else if (elizaDiag.diagnostico && elizaDiag.diagnostico.palavraChaveIdentificada && elizaDiag.diagnostico.palavraChaveIdentificada !== 'xnone') {
+      metodoUsado = 'ELIZA (padrões de conversação)';
+    } else if (diag.match) {
+      metodoUsado = 'NLP (TF-IDF + Cosseno)';
+    } else {
+      metodoUsado = 'fallback (resposta padrão contextual)';
+    }
+    
+    return {
+      ...diag,
+      eliza: elizaDiag.diagnostico,
+      metodoUsado,
+      capturadoPorRegra
     };
   }
 }

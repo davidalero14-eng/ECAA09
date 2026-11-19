@@ -22,7 +22,7 @@
 </head>
 <body>
   <h1>🧪 Marmitaê - Runner de Testes Automatizados</h1>
-  <p class="subtitle">Execução dos 16 cenários de teste (12 requisitos originais + 4 testes avançados de segurança, cupons e fuga de escopo).</p>
+  <p class="subtitle">Execução dos 33 cenários de teste (18 requisitos originais + 15 testes NLP/ELIZA).</p>
   
   <div class="summary-card">
     <div class="summary-title" id="summary">Executando suíte de testes...</div>
@@ -35,33 +35,37 @@
   <script type="module">
     import { runAllTests } from './js/tests.js';
 
-    const results = runAllTests();
-    const resultsContainer = document.getElementById('results');
-    const summaryContainer = document.getElementById('summary');
-    const summarySub = document.getElementById('summary-sub');
+    async function executarTestes() {
+      const results = await runAllTests();
+      const resultsContainer = document.getElementById('results');
+      const summaryContainer = document.getElementById('summary');
+      const summarySub = document.getElementById('summary-sub');
 
-    let passedCount = 0;
-    resultsContainer.innerHTML = '';
+      let passedCount = 0;
+      resultsContainer.innerHTML = '';
 
-    results.forEach((t, idx) => {
-      if (t.passed) passedCount++;
-      const div = document.createElement('div');
-      div.className = `test-box ${t.passed ? 'passed' : 'failed'}`;
-      div.innerHTML = `
-        <span class="badge ${t.passed ? 'badge-pass' : 'badge-fail'}">${t.passed ? 'PASSOU' : 'FALHOU'}</span>
-        <strong>${t.scenario}</strong>
-        ${t.details ? `<div style="font-size: 0.85rem; color: #666; margin-top: 0.25rem;">Detalhes: ${t.details}</div>` : ''}
-      `;
-      resultsContainer.appendChild(div);
-    });
+      results.forEach((t, idx) => {
+        if (t.passed) passedCount++;
+        const div = document.createElement('div');
+        div.className = `test-box ${t.passed ? 'passed' : 'failed'}`;
+        div.innerHTML = `
+          <span class="badge ${t.passed ? 'badge-pass' : 'badge-fail'}">${t.passed ? 'PASSOU' : 'FALHOU'}</span>
+          <strong>${t.scenario}</strong>
+          ${t.details ? `<div style="font-size: 0.85rem; color: #666; margin-top: 0.25rem;">Detalhes: ${t.details}</div>` : ''}
+        `;
+        resultsContainer.appendChild(div);
+      });
 
-    if (passedCount === results.length) {
-      summaryContainer.innerHTML = `🎉 Todos os ${results.length} testes passaram com 100% de sucesso!`;
-      summarySub.textContent = 'Validação completa de fluxos de vendas, personalizações, guardrails contra injeção e fuga de escopo, cupons e regras de negócio.';
-    } else {
-      summaryContainer.innerHTML = `⚠️ Atenção: ${passedCount} de ${results.length} testes passaram.`;
-      summaryContainer.style.color = '#c62828';
+      if (passedCount === results.length) {
+        summaryContainer.innerHTML = `🎉 Todos os ${results.length} testes passaram com 100% de sucesso!`;
+        summarySub.textContent = 'Validação completa: fluxos de vendas, personalizações, guardrails, cupons, NLP (TF-IDF + Cosseno), ELIZA e integridade financeira.';
+      } else {
+        summaryContainer.innerHTML = `⚠️ Atenção: ${passedCount} de ${results.length} testes passaram.`;
+        summaryContainer.style.color = '#c62828';
+      }
     }
+
+    executarTestes();
   </script>
 </body>
 </html>

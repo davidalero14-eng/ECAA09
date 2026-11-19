@@ -18,11 +18,14 @@ export class ChatbotUI {
    */
   adicionarMensagemUsuario(texto) {
     const el = document.createElement('div');
-    el.className = 'mensagem mensagem-usuario';
+    el.className = 'message message-user';
     el.innerHTML = `
-      <div class="mensagem-conteudo">
+      <div class="message-avatar">
+        <div class="avatar-circle">👤</div>
+      </div>
+      <div class="message-content">
         <p>${escaparHTML(texto)}</p>
-        <span class="mensagem-hora">${getHoraAtual()}</span>
+        <span class="message-time">${getHoraAtual()}</span>
       </div>
     `;
     this.container.appendChild(el);
@@ -33,57 +36,60 @@ export class ChatbotUI {
    * Adiciona mensagem do agente (bot) com badge indicando o modo de processamento.
    * Suporta renderização opcional de cards visuais de produtos.
    * @param {string} texto 
-   * @param {string} modoUsado 'llm', 'demo', 'guardrails' ou 'fallback'
+   * @param {string} modoUsado 'llm', 'demo', 'deterministico', 'eliza', 'guardrails' ou 'fallback'
    * @param {Array<object>} cardsProdutos Lista opcional de produtos para exibir cards visuais
    */
-  adicionarMensagemBot(texto, modoUsado = 'demo', cardsProdutos = null) {
+  adicionarMensagemBot(texto, modoUsado = 'deterministico', cardsProdutos = null) {
     const el = document.createElement('div');
-    el.className = 'mensagem mensagem-bot';
+    el.className = 'message message-bot';
 
     let badgeHtml = '';
     if (modoUsado === 'llm') {
-      badgeHtml = '<span class="badge-modo badge-ia" title="Processado por IA (Google Gemini 1.5 Flash)"><i class="fa-solid fa-sparkles"></i> IA Gemini</span>';
-    } else if (modoUsado === 'demo') {
-      badgeHtml = '<span class="badge-modo badge-demo" title="Processado pelo Motor Determinístico Local"><i class="fa-solid fa-cube"></i> Modo Demo</span>';
+      badgeHtml = '<span class="mode-badge badge-llm" title="Processado por IA (Google Gemini)"><i class="fa-solid fa-sparkles"></i> IA Gemini</span>';
+    } else if (modoUsado === 'eliza') {
+      badgeHtml = '<span class="mode-badge badge-eliza" title="Processado por ELIZA (Padrões de Conversação Clássicos)"><i class="fa-solid fa-robot"></i> ELIZA</span>';
+    } else if (modoUsado === 'deterministico' || modoUsado === 'demo' || modoUsado === 'sem_llm') {
+      badgeHtml = '<span class="mode-badge badge-deterministico" title="Processado 100% Client-Side por Regras + NLP + TF-IDF + Cosseno"><i class="fa-solid fa-cube"></i> NLP Clássico</span>';
     } else if (modoUsado === 'guardrails') {
-      badgeHtml = '<span class="badge-modo badge-guardrail" title="Filtro Ativo de Segurança e Integridade"><i class="fa-solid fa-shield-halved"></i> Guardrail Ativo</span>';
+      badgeHtml = '<span class="mode-badge badge-guardrail" title="Filtro Ativo de Segurança e Integridade"><i class="fa-solid fa-shield-halved"></i> Guardrail Ativo</span>';
     } else if (modoUsado === 'fallback') {
-      badgeHtml = '<span class="badge-modo badge-fallback" title="Fallback gracioso local acionado"><i class="fa-solid fa-arrows-rotate"></i> Fallback</span>';
+      badgeHtml = '<span class="mode-badge badge-fallback" title="Fallback gracioso local acionado"><i class="fa-solid fa-arrows-rotate"></i> Fallback</span>';
     }
 
     let cardsHtml = '';
     if (cardsProdutos && Array.isArray(cardsProdutos) && cardsProdutos.length > 0) {
       cardsHtml = `
-        <div class="cards-produtos-container">
+        <div class="cards-container">
           ${cardsProdutos.map(prod => `
-            <div class="card-produto-chat" data-id="${prod.id}">
-              <div class="card-produto-header">
-                <span class="card-produto-tag">${prod.categoria.toUpperCase()}</span>
-                <span class="card-produto-preco">${formatarMoeda(prod.preco)}</span>
+            <article class="card-chat" data-id="${prod.id}" role="listitem">
+              <div class="card-chat-header">
+                <span class="card-chat-tag">${prod.categoria.toUpperCase()}</span>
+                <span class="card-chat-price">${formatarMoeda(prod.preco)}</span>
               </div>
-              <div class="card-produto-nome">${escaparHTML(prod.nome)}</div>
-              <div class="card-produto-desc">${escaparHTML(prod.descricao)}</div>
-              <button type="button" class="btn-card-pedir" data-id="${prod.id}">
-                <i class="fa-solid fa-plus"></i> Pedir este
+              <h3 class="card-chat-name">${escaparHTML(prod.nome)}</h3>
+              <p class="card-chat-desc">${escaparHTML(prod.descricao)}</p>
+              <button type="button" class="btn-card-pedir" data-id="${prod.id}" aria-label="Pedir ${escaparHTML(prod.nome)}">
+                <i class="fa-solid fa-plus" aria-hidden="true"></i>
+                Pedir
               </button>
-            </div>
+            </article>
           `).join('')}
         </div>
       `;
     }
 
     el.innerHTML = `
-      <div class="mensagem-avatar">
-        <div class="avatar-circulo">🍲</div>
+      <div class="message-avatar">
+        <div class="avatar-circle">🍲</div>
       </div>
-      <div class="mensagem-conteudo">
-        <div class="mensagem-cabecalho">
-          <span class="mensagem-autor">Marmitaê</span>
+      <div class="message-content">
+        <div class="message-header">
+          <span class="message-author">Marmitaê</span>
           ${badgeHtml}
         </div>
-        <div class="mensagem-texto">${formatarTextoMensagem(texto)}</div>
+        <div class="message-texto">${formatarTextoMensagem(texto)}</div>
         ${cardsHtml}
-        <span class="mensagem-hora">${getHoraAtual()}</span>
+        <span class="message-time">${getHoraAtual()}</span>
       </div>
     `;
     this.container.appendChild(el);
@@ -96,10 +102,10 @@ export class ChatbotUI {
   mostrarDigitando(visivel = true) {
     if (this.digitandoEl) {
       if (visivel) {
-        this.digitandoEl.classList.remove('oculto');
+        this.digitandoEl.classList.remove('hidden');
         this.rolarParaFinal();
       } else {
-        this.digitandoEl.classList.add('oculto');
+        this.digitandoEl.classList.add('hidden');
       }
     }
   }

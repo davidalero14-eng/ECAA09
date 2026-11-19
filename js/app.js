@@ -10,7 +10,7 @@ import { AgentManager } from './agent.js';
 import { ChatbotUI } from './chatbot.js';
 import { formatarMoeda, escaparHTML } from './utils.js';
 import { somService } from './sound.js';
-import { CARDAPIO, buscarProdutoPorId, setDiaSimulado, getDiaAtual, DIAS_SEMANA_NOMES } from './menu.js';
+import { CARDAPIO, buscarProdutoPorId, setDiaSimulado, getDiaAtual, DIAS_SEMANA_NOMES, inicializarMenu, consultarCardapio } from './menu.js';
 
 class MarmitaeApp {
   constructor() {
@@ -32,7 +32,12 @@ class MarmitaeApp {
     this.enviarBoasVindas();
   }
 
-  initDOM() {
+  async initApp() {
+    await inicializarMenu();
+    await this.agent.inicializar();
+  }
+
+initDOM() {
     // Elementos do Chat
     this.chatForm = document.getElementById('chat-form');
     this.chatInput = document.getElementById('chat-input');
@@ -51,6 +56,13 @@ class MarmitaeApp {
 
     // Botão Catálogo de Cardápio
     this.btnVerCardapioModal = document.getElementById('btn-ver-cardapio-modal');
+
+    // Hero Section
+    this.btnHeroComecar = document.getElementById('btn-hero-comecar');
+    this.destaqueDiaNome = document.getElementById('destaque-dia-nome');
+    this.destaqueGrid = document.getElementById('destaque-grid');
+    this.btnDiaAnterior = document.getElementById('btn-dia-anterior');
+    this.btnDiaProximo = document.getElementById('btn-dia-proximo');
 
     // Elementos do Carrinho
     this.cartItemsList = document.getElementById('cart-items-list');
@@ -75,19 +87,7 @@ class MarmitaeApp {
     this.couponAppliedText = document.getElementById('coupon-applied-text');
     this.btnRemoverCupom = document.getElementById('btn-remover-cupom');
 
-    // Modal de Configuração
-    this.btnStatusModo = document.getElementById('btn-status-modo');
-    this.btnAbrirConfig = document.getElementById('btn-abrir-config');
-    this.modalConfig = document.getElementById('modal-config');
-    this.btnFecharModal = document.getElementById('btn-fechar-modal-config');
-    this.btnCancelarModal = document.getElementById('btn-cancelar-modal');
-    this.btnSalvarChave = document.getElementById('btn-salvar-chave');
-    this.btnLimparChave = document.getElementById('btn-limpar-chave');
-    this.btnTestarConexao = document.getElementById('btn-testar-conexao');
-    this.statusTesteConexao = document.getElementById('status-teste-conexao');
-    this.inputApiKey = document.getElementById('input-api-key');
-    this.radioDemo = document.getElementById('radio-demo');
-    this.radioLLM = document.getElementById('radio-llm');
+    // Indicador de Modo (apenas visual - modo determinístico fixo)
     this.textoModo = document.getElementById('texto-modo');
     this.iconeModo = document.getElementById('icone-modo');
 
@@ -97,7 +97,7 @@ class MarmitaeApp {
     this.btnFecharModalCardapioRodape = document.getElementById('btn-fechar-modal-cardapio-rodape');
     this.modalMenuGrid = document.getElementById('modal-menu-grid');
     this.inputBuscaCardapio = document.getElementById('input-busca-cardapio');
-    this.menuTabBtns = document.querySelectorAll('.menu-tab-btn');
+    this.menuTabBtns = document.querySelectorAll('.menu-tab');
 
     // Modal de Rastreador de Pedido
     this.modalTracker = document.getElementById('modal-tracker');
@@ -108,6 +108,40 @@ class MarmitaeApp {
     this.trackerClienteInfo = document.getElementById('tracker-cliente-info');
     this.trackerStatusMensagem = document.getElementById('tracker-status-mensagem');
     this.trackerProgressLine = document.getElementById('tracker-progress-line');
+
+    // Modal de Diagnóstico NLP
+    this.modalDiagnostico = document.getElementById('modal-diagnostico');
+    this.btnDiagnosticoNLP = document.getElementById('btn-diagnostico-nlp');
+    this.btnFecharModalDiagnostico = document.getElementById('btn-fechar-modal-diagnostico');
+    this.btnFecharModalDiagnosticoRodape = document.getElementById('btn-fechar-modal-diagnostico-rodape');
+    
+    // Elementos do Diagnóstico
+    this.diagMensagemOriginal = document.getElementById('diag-mensagem-original');
+    this.diagMensagemNormalizada = document.getElementById('diag-mensagem-normalizada');
+    this.diagTokens = document.getElementById('diag-tokens');
+    this.diagStopwords = document.getElementById('diag-stopwords');
+    this.diagRadicais = document.getElementById('diag-radicais');
+    this.diagBow = document.getElementById('diag-bow');
+    this.diagTfidf = document.getElementById('diag-tfidf');
+    this.diagIntencao = document.getElementById('diag-intencao');
+    this.diagCosseno = document.getElementById('diag-cosseno');
+    this.diagLimiar = document.getElementById('diag-limiar');
+    this.diagMetodo = document.getElementById('diag-metodo');
+
+    // Elementos do Diagnóstico ELIZA
+    this.diagElizaKeyword = document.getElementById('diag-eliza-keyword');
+    this.diagElizaPrioridade = document.getElementById('diag-eliza-prioridade');
+    this.diagElizaPadrao = document.getElementById('diag-eliza-padrao');
+    this.diagElizaGrupos = document.getElementById('diag-eliza-grupos');
+    this.diagElizaReflexoes = document.getElementById('diag-eliza-reflexoes');
+    this.diagElizaRemontagem = document.getElementById('diag-eliza-remontagem');
+    this.diagElizaResposta = document.getElementById('diag-eliza-resposta');
+
+    // Navegação de Dias (Hero Section)
+    this.btnDiaAnterior = document.getElementById('btn-dia-anterior');
+    this.btnDiaProximo = document.getElementById('btn-dia-proximo');
+    this.destaqueDiaNome = document.getElementById('destaque-dia-nome');
+    this.destaqueGrid = document.getElementById('destaque-grid');
 
     // Container de Toasts
     this.toastContainer = document.getElementById('toast-container');
@@ -175,7 +209,19 @@ class MarmitaeApp {
       const nomeDia = DIAS_SEMANA_NOMES[diaAtivo];
       this.mostrarToast(`Dia simulado alterado para: ${nomeDia}`, 'info');
       this.chatUI.adicionarMensagemBot(`📅 O dia da semana foi ajustado para **${nomeDia}**. As disponibilidades dos pratos foram atualizadas!`, 'demo');
+      this.atualizarDestaqueDia();
     });
+
+    // Hero Section - Botão "Começar meu pedido"
+    this.btnHeroComecar.addEventListener('click', () => {
+      this.chatInput.focus();
+      this.chatInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      this.mostrarToast('Digite seu pedido ou use as sugestões rápidas!', 'info');
+    });
+
+    // Navegação de Dias (Hero Section)
+    this.btnDiaAnterior.addEventListener('click', () => this.navegarDia(-1));
+    this.btnDiaProximo.addEventListener('click', () => this.navegarDia(1));
 
     // Modal de Cardápio Completo
     this.btnVerCardapioModal.addEventListener('click', () => this.abrirModalCardapio());
@@ -229,19 +275,15 @@ class MarmitaeApp {
     this.btnFecharCarrinhoMobile.addEventListener('click', () => this.fecharCarrinhoMobile());
     this.cartBackdrop.addEventListener('click', () => this.fecharCarrinhoMobile());
 
-    // Configuração de API e Modos
-    this.btnStatusModo.addEventListener('click', () => this.abrirModalConfig());
-    this.btnAbrirConfig.addEventListener('click', () => this.abrirModalConfig());
-    this.btnFecharModal.addEventListener('click', () => this.fecharModalConfig());
-    this.btnCancelarModal.addEventListener('click', () => this.fecharModalConfig());
-    this.btnSalvarChave.addEventListener('click', () => this.salvarConfiguracaoApi());
-    this.btnLimparChave.addEventListener('click', () => this.limparConfiguracaoApi());
-    this.btnTestarConexao.addEventListener('click', () => this.testarConexaoApi());
-
     // Modal de Rastreador de Pedidos
     this.btnFecharModalTracker.addEventListener('click', () => this.fecharModalTracker());
     this.btnFecharModalTrackerRodape.addEventListener('click', () => this.fecharModalTracker());
     this.btnAvancarEtapaTracker.addEventListener('click', () => this.avancarEtapaTracker());
+
+    // Modal de Diagnóstico NLP
+    this.btnDiagnosticoNLP.addEventListener('click', () => this.abrirModalDiagnostico());
+    this.btnFecharModalDiagnostico.addEventListener('click', () => this.fecharModalDiagnostico());
+    this.btnFecharModalDiagnosticoRodape.addEventListener('click', () => this.fecharModalDiagnostico());
 
     // Ações dentro da lista do carrinho (Delegação de eventos)
     this.cartItemsList.addEventListener('click', (e) => {
@@ -253,18 +295,16 @@ class MarmitaeApp {
         return;
       }
 
-      const btnMenos = e.target.closest('.btn-diminuir');
-      if (btnMenos) {
-        const idItem = btnMenos.dataset.id;
-        this.carrinho.incrementarQuantidade(idItem, -1);
-        return;
-      }
-
-      const btnMais = e.target.closest('.btn-aumentar');
-      if (btnMais) {
-        const idItem = btnMais.dataset.id;
-        this.carrinho.incrementarQuantidade(idItem, 1);
-        somService.tocarAdicionarItem();
+      const btnQtd = e.target.closest('.btn-qty');
+      if (btnQtd) {
+        const idItem = btnQtd.dataset.id;
+        const action = btnQtd.dataset.action;
+        if (action === 'decrease') {
+          this.carrinho.incrementarQuantidade(idItem, -1);
+        } else if (action === 'increase') {
+          this.carrinho.incrementarQuantidade(idItem, 1);
+          somService.tocarAdicionarItem();
+        }
         return;
       }
     });
@@ -294,25 +334,8 @@ class MarmitaeApp {
     } else {
       this.mostrarToast(res.erro, 'warn');
     }
-  }
-
-  async testarConexaoApi() {
-    const chave = this.inputApiKey.value.trim();
-    this.statusTesteConexao.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Testando conectividade com o Google Gemini...';
-    this.statusTesteConexao.style.color = 'var(--text-muted)';
-
-    const res = await this.agent.gemini.testarConexao(chave);
-    if (res.valido) {
-      this.statusTesteConexao.innerHTML = '✅ ' + res.mensagem;
-      this.statusTesteConexao.style.color = '#2e7d32';
-      this.mostrarToast('Chave de API validada com sucesso!', 'success');
-    } else {
-      this.statusTesteConexao.innerHTML = '❌ ' + res.mensagem;
-      this.statusTesteConexao.style.color = '#c62828';
-      this.mostrarToast('Falha na validação da chave.', 'warn');
-    }
-  }
-
+}
+  
   async enviarMensagemUsuario() {
     const texto = this.chatInput.value.trim();
     if (!texto) return;
@@ -365,21 +388,21 @@ class MarmitaeApp {
 
     // Linha de Desconto de Cupom
     if (estado.cupom && estado.desconto > 0) {
-      this.cartRowDesconto.classList.remove('oculto');
+      this.cartRowDesconto.classList.remove('hidden');
       this.cartDesconto.textContent = `- ${formatarMoeda(estado.desconto)}`;
-      this.couponInputGroup.classList.add('oculto');
-      this.couponAppliedGroup.classList.remove('oculto');
+      this.couponInputGroup.classList.add('hidden');
+      this.couponAppliedGroup.classList.remove('hidden');
       this.couponAppliedText.textContent = `Cupom: ${estado.cupom.codigo} (-${formatarMoeda(estado.desconto)})`;
     } else if (estado.cupom && estado.cupom.tipo === 'frete_gratis') {
-      this.cartRowDesconto.classList.remove('oculto');
+      this.cartRowDesconto.classList.remove('hidden');
       this.cartDesconto.textContent = `Frete Grátis aplicado!`;
-      this.couponInputGroup.classList.add('oculto');
-      this.couponAppliedGroup.classList.remove('oculto');
+      this.couponInputGroup.classList.add('hidden');
+      this.couponAppliedGroup.classList.remove('hidden');
       this.couponAppliedText.textContent = `Cupom: FRETEGRATIS`;
     } else {
-      this.cartRowDesconto.classList.add('oculto');
-      this.couponInputGroup.classList.remove('oculto');
-      this.couponAppliedGroup.classList.add('oculto');
+      this.cartRowDesconto.classList.add('hidden');
+      this.couponInputGroup.classList.remove('hidden');
+      this.couponAppliedGroup.classList.add('hidden');
     }
 
     if (estado.tipoEntrega === 'retirada' || (estado.cupom && estado.cupom.tipo === 'frete_gratis')) {
@@ -415,28 +438,27 @@ class MarmitaeApp {
           <div class="cart-item-price">${formatarMoeda(item.subtotal)}</div>
         </div>
 
-        ${item.personalizacoes && item.personalizacoes.length > 0 ? `
-          <div class="cart-item-customizations">
+${item.personalizacoes && item.personalizacoes.length > 0 ? `
+          <div class="cart-item-custom">
             <i class="fa-solid fa-pen-to-square"></i> ${escaparHTML(item.personalizacoes.join(', '))}
           </div>
         ` : ''}
-
+  
         ${item.observacoes ? `
-          <div class="cart-item-customizations">
+          <div class="cart-item-custom">
             <i class="fa-solid fa-note-sticky"></i> ${escaparHTML(item.observacoes)}
           </div>
         ` : ''}
-
-        <div class="cart-item-bottom">
-          <div class="cart-qty-control">
-            <button class="btn-qty btn-diminuir" data-id="${item.idItem}" title="Diminuir quantidade">-</button>
-            <span class="qty-number">${item.quantidade}</span>
-            <button class="btn-qty btn-aumentar" data-id="${item.idItem}" title="Aumentar quantidade">+</button>
+  
+        <div class="cart-item-controls">
+          <div class="cart-qty">
+            <button class="btn-qty" data-id="${item.idItem}" data-action="decrease" title="Diminuir quantidade" aria-label="Diminuir quantidade">-</button>
+            <span class="qty-value">${item.quantidade}</span>
+            <button class="btn-qty" data-id="${item.idItem}" data-action="increase" title="Aumentar quantidade" aria-label="Aumentar quantidade">+</button>
           </div>
-          <button class="btn-remove-item" data-id="${item.idItem}">
-            <i class="fa-solid fa-trash-can"></i> Remover
+          <button class="btn-remove-item" data-id="${item.idItem}" title="Remover item" aria-label="Remover item">
+            <i class="fa-solid fa-trash" aria-hidden="true"></i>
           </button>
-        </div>
       </div>
     `).join('');
   }
@@ -452,67 +474,11 @@ class MarmitaeApp {
   }
 
   // --- MODAL DE CONFIGURAÇÃO DA API ---
-  abrirModalConfig() {
-    this.inputApiKey.value = this.agent.gemini.getApiKey();
-    this.statusTesteConexao.textContent = '';
-    if (this.agent.getModo() === 'llm') {
-      this.radioLLM.checked = true;
-    } else {
-      this.radioDemo.checked = true;
-    }
-    this.modalConfig.classList.remove('oculto');
-  }
-
-  fecharModalConfig() {
-    this.modalConfig.classList.add('oculto');
-  }
-
-  salvarConfiguracaoApi() {
-    const key = this.inputApiKey.value.trim();
-    const modoEscolhido = document.querySelector('input[name="modo_operacao"]:checked').value;
-
-    if (modoEscolhido === 'llm' && !key) {
-      alert('Para ativar o Modo IA Gemini, por favor insira sua chave de API.');
-      return;
-    }
-
-    if (key) {
-      this.agent.gemini.setApiKey(key);
-    }
-
-    try {
-      this.agent.setModo(modoEscolhido);
-    } catch (err) {
-      alert(err.message);
-      return;
-    }
-
-    this.atualizarStatusModoUI();
-    this.fecharModalConfig();
-    this.mostrarToast(`Modo alterado para: ${modoEscolhido === 'llm' ? 'IA Gemini' : 'Modo Demo'}`, 'success');
-  }
-
-  limparConfiguracaoApi() {
-    this.agent.gemini.limparApiKey();
-    this.inputApiKey.value = '';
-    this.radioDemo.checked = true;
-    this.agent.setModo('demo');
-    this.atualizarStatusModoUI();
-    this.fecharModalConfig();
-    this.mostrarToast('Chave de API removida com sucesso.', 'info');
-  }
-
   atualizarStatusModoUI() {
-    const modo = this.agent.getModo();
-    if (modo === 'llm') {
-      this.textoModo.textContent = 'IA Gemini';
-      this.iconeModo.className = 'fa-solid fa-sparkles';
-      this.iconeModo.style.color = '#7c3aed';
-    } else {
-      this.textoModo.textContent = 'Modo Demo';
-      this.iconeModo.className = 'fa-solid fa-cube';
-      this.iconeModo.style.color = 'var(--primary)';
-    }
+    // Modo exclusivamente determinístico (sem LLM)
+    this.textoModo.textContent = 'NLP Clássico';
+    this.iconeModo.className = 'fa-solid fa-cube';
+    this.iconeModo.style.color = 'var(--primary)';
   }
 
   atualizarBotaoSomUI() {
@@ -544,15 +510,15 @@ class MarmitaeApp {
   // --- MODAL CARDÁPIO COMPLETO ---
   abrirModalCardapio() {
     this.renderizarGradeCardapioModal();
-    this.modalCardapio.classList.remove('oculto');
+    this.modalCardapio.classList.remove('hidden');
   }
 
   fecharModalCardapio() {
-    this.modalCardapio.classList.add('oculto');
+    this.modalCardapio.classList.add('hidden');
   }
 
   renderizarGradeCardapioModal() {
-    const categoriaAtiva = document.querySelector('.menu-tab-btn.ativo').dataset.categoria;
+    const categoriaAtiva = document.querySelector('.menu-tab.active').dataset.categoria;
     const busca = this.inputBuscaCardapio.value.toLowerCase().trim();
     const diaAtual = getDiaAtual();
 
@@ -609,11 +575,11 @@ class MarmitaeApp {
     this.trackerClienteInfo.textContent = `Cliente: ${p.clienteNome || 'Cliente'} • Total: ${formatarMoeda(p.total)}`;
     this.etapaTrackerAtual = 1;
     this.atualizarEtapaTrackerVisual(1);
-    this.modalTracker.classList.remove('oculto');
+    this.modalTracker.classList.remove('hidden');
   }
 
   fecharModalTracker() {
-    this.modalTracker.classList.add('oculto');
+    this.modalTracker.classList.add('hidden');
   }
 
   avancarEtapaTracker() {
@@ -653,10 +619,211 @@ class MarmitaeApp {
       somService.tocarSucessoPedido();
       this.mostrarToast('Pedido entregue com sucesso! Bom apetite!', 'success');
     }
+}
+  
+  // --- HERO SECTION & DESTAQUES DO DIA ---
+  
+  atualizarDestaqueDia() {
+    const diaAtual = getDiaAtual();
+    const nomeDia = DIAS_SEMANA_NOMES[diaAtual];
+    
+    // Atualiza o nome do dia no hero
+    if (this.destaqueDiaNome) {
+      this.destaqueDiaNome.textContent = diaAtual === 'domingo' ? 'Domingo (Fechado)' : nomeDia;
+    }
+    
+    // Renderiza os cards de destaque do dia
+    this.renderizarDestaquesDia(diaAtual);
+    
+    // Atualiza botões de navegação
+    this.atualizarBotoesNavegacaoDia(diaAtual);
+  }
+  
+  renderizarDestaquesDia(dia) {
+    if (!this.destaqueGrid) return;
+    
+    const disponiveisHoje = consultarCardapio(dia, 'marmitas');
+    
+    if (disponiveisHoje.length === 0) {
+      this.destaqueGrid.innerHTML = `
+        <div style="grid-column: 1/-1; text-align: center; padding: 3rem; color: var(--text-muted);">
+          <i class="fa-solid fa-calendar-xmark" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.3;"></i>
+          <p style="font-size: 1.125rem; margin-bottom: 0.5rem;">Restaurante fechado hoje</p>
+          <p>Volte de Segunda a Sábado para nossas marmitas caseiras!</p>
+        </div>
+      `;
+      return;
+    }
+    
+    this.destaqueGrid.innerHTML = disponiveisHoje.map(prod => {
+      return `
+        <article class="destaque-card" role="listitem">
+          <span class="destaque-badge marmita">Marmitas</span>
+          <div class="destaque-content">
+            <h3 class="destaque-name">${escaparHTML(prod.nome)}</h3>
+            <p class="destaque-desc">${escaparHTML(prod.descricao)}</p>
+          </div>
+          <div class="destaque-footer">
+            <span class="destaque-price">${formatarMoeda(prod.preco)}</span>
+            <button type="button" class="destaque-btn" onclick="window.app.pedirPeloDestaque('${prod.id}')">
+              <i class="fa-solid fa-plus" aria-hidden="true"></i>
+              Adicionar
+            </button>
+          </div>
+        </article>
+      `;
+    }).join('');
+  }
+  
+  atualizarBotoesNavegacaoDia(diaAtual) {
+    if (!this.btnDiaAnterior || !this.btnDiaProximo) return;
+    
+    const diasOrdem = ['segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado', 'domingo'];
+    const idxAtual = diasOrdem.indexOf(diaAtual);
+    
+    const diaAnterior = diasOrdem[(idxAtual - 1 + diasOrdem.length) % diasOrdem.length];
+    const diaProximo = diasOrdem[(idxAtual + 1) % diasOrdem.length];
+    
+    this.btnDiaAnterior.disabled = false;
+    this.btnDiaProximo.disabled = false;
+    this.btnDiaAnterior.title = DIAS_SEMANA_NOMES[diaAnterior];
+    this.btnDiaProximo.title = DIAS_SEMANA_NOMES[diaProximo];
+  }
+  
+  navegarDia(direcao) {
+    const diasOrdem = ['segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado', 'domingo'];
+    const diaAtual = getDiaAtual();
+    const idxAtual = diasOrdem.indexOf(diaAtual);
+    const novoIdx = (idxAtual + direcao + diasOrdem.length) % diasOrdem.length;
+    const novoDia = diasOrdem[novoIdx];
+    
+    setDiaSimulado(novoDia);
+    this.selectDiaSimulado.value = novoDia;
+    
+    const nomeDia = DIAS_SEMANA_NOMES[novoDia];
+    this.mostrarToast(`Dia alterado para: ${nomeDia}`, 'info');
+    this.chatUI.adicionarMensagemBot(`📅 O dia da semana foi ajustado para **${nomeDia}**. As disponibilidades dos pratos foram atualizadas!`, 'demo');
+    
+    this.atualizarDestaqueDia();
+  }
+  
+  pedirPeloDestaque(produtoId) {
+    const prod = buscarProdutoPorId(produtoId);
+    if (!prod) return;
+    
+    this.chatInput.value = `Quero pedir 1 ${prod.nome}`;
+    this.enviarMensagemUsuario();
+    somService.tocarAdicionarItem();
+    
+    // Scroll para o chat
+    this.chatInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+  
+  // --- MODAL DIAGNÓSTICO NLP ---
+  abrirModalDiagnostico() {
+    const ultimaMensagem = this.chatMessagesContainer.querySelector('.message-user:last-child');
+    const texto = ultimaMensagem ? ultimaMensagem.textContent.trim() : '';
+    
+    if (texto) {
+      this.atualizarDiagnostico(texto);
+    } else {
+      this.limparDiagnostico();
+    }
+    
+    this.modalDiagnostico.classList.remove('hidden');
+  }
+  
+  fecharModalDiagnostico() {
+    this.modalDiagnostico.classList.add('hidden');
+  }
+  
+  atualizarDiagnostico(mensagemTexto) {
+    const diag = this.agent.diagnosticarNLP(mensagemTexto);
+    
+    if (diag.erro) {
+      this.limparDiagnostico();
+      this.diagMensagemOriginal.textContent = 'Erro: ' + diag.erro;
+      return;
+    }
+  
+    this.diagMensagemOriginal.textContent = diag.original || '';
+    this.diagMensagemNormalizada.textContent = diag.normalizado || '';
+    this.diagTokens.textContent = JSON.stringify(diag.tokens || [], null, 2);
+    this.diagStopwords.textContent = JSON.stringify(diag.stopwordsEncontradas || [], null, 2);
+    this.diagRadicais.textContent = JSON.stringify(diag.radicais || [], null, 2);
+    this.diagBow.textContent = JSON.stringify(diag.vetorBoW || [], null, 2);
+    this.diagTfidf.textContent = JSON.stringify(diag.vetorEntrada || [], null, 2);
+    
+    if (diag.itemCorrespondente) {
+      this.diagIntencao.textContent = JSON.stringify({
+        tag: diag.itemCorrespondente.tag,
+        resposta: diag.itemCorrespondente.resposta.substring(0, 100) + '...',
+        acao: diag.itemCorrespondente.acao
+      }, null, 2);
+    } else {
+      this.diagIntencao.textContent = 'Nenhuma intenção correspondente encontrada (fallback)';
+    }
+    
+    this.diagCosseno.textContent = JSON.stringify({
+      score: diag.score,
+      limiarAplicado: diag.limiarAplicado,
+      match: diag.match,
+      topSimilaridades: (diag.similaridades || []).slice(0, 5).map(s => ({
+        tag: s.tag,
+        texto: s.textoOriginal.substring(0, 50),
+        score: s.score
+      }))
+    }, null, 2);
+    
+    this.diagLimiar.textContent = `Limiar mínimo: ${diag.limiarAplicado.toFixed(2)}`;
+    this.diagMetodo.textContent = diag.metodoUsado || 'desconhecido';
+  
+    // ELIZA Diagnóstico
+    if (diag.eliza) {
+      this.diagElizaKeyword.textContent = diag.eliza.palavraChaveIdentificada || 'nenhuma';
+      this.diagElizaPrioridade.textContent = diag.eliza.prioridade || 0;
+      this.diagElizaPadrao.textContent = diag.eliza.padraoDecomposicao || 'nenhum';
+      this.diagElizaGrupos.textContent = JSON.stringify(diag.eliza.gruposCapturados || [], null, 2);
+      this.diagElizaReflexoes.textContent = JSON.stringify(diag.eliza.reflexoesRealizadas || [], null, 2);
+      this.diagElizaRemontagem.textContent = diag.eliza.remontagemSelecionada || 'nenhuma';
+      this.diagElizaResposta.textContent = diag.eliza.respostaProduzida || 'nenhuma';
+    } else {
+      this.diagElizaKeyword.textContent = 'não executado';
+      this.diagElizaPrioridade.textContent = '-';
+      this.diagElizaPadrao.textContent = '-';
+      this.diagElizaGrupos.textContent = '-';
+      this.diagElizaReflexoes.textContent = '-';
+      this.diagElizaRemontagem.textContent = '-';
+      this.diagElizaResposta.textContent = '-';
+    }
+  }
+  
+  limparDiagnostico() {
+    this.diagMensagemOriginal.textContent = '';
+    this.diagMensagemNormalizada.textContent = '';
+    this.diagTokens.textContent = '';
+    this.diagStopwords.textContent = '';
+    this.diagRadicais.textContent = '';
+    this.diagBow.textContent = '';
+    this.diagTfidf.textContent = '';
+    this.diagIntencao.textContent = '';
+    this.diagCosseno.textContent = '';
+    this.diagLimiar.textContent = '';
+    this.diagMetodo.textContent = '';
+  
+    // ELIZA
+    this.diagElizaKeyword.textContent = '';
+    this.diagElizaPrioridade.textContent = '';
+    this.diagElizaPadrao.textContent = '';
+    this.diagElizaGrupos.textContent = '';
+    this.diagElizaReflexoes.textContent = '';
+    this.diagElizaRemontagem.textContent = '';
+    this.diagElizaResposta.textContent = '';
   }
 }
 
 // Inicializa a aplicação ao carregar a página
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   window.app = new MarmitaeApp();
+  await window.app.initApp();
 });

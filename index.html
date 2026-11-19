@@ -3,13 +3,20 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Marmitaê - Chatbot inteligente de marmitas artesanais. Peça sua marmita caseira com personalização, cupons e acompanhamento em tempo real.">
   <title>Marmitaê | Chatbot Inteligente de Marmitas</title>
   
-  <!-- Favicon com emoji de marmita -->
+  <!-- Favicon -->
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍲</text></svg>">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍲</text></svg>">
   
   <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <!-- Google Fonts - Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   
   <!-- Folhas de Estilo -->
   <link rel="stylesheet" href="css/style.css">
@@ -20,26 +27,26 @@
   <!-- CABEÇALHO SUPERIOR -->
   <header class="app-header">
     <div class="header-container">
-      <div class="brand">
-        <div class="brand-icon">🍲</div>
+      <a href="#" class="brand" aria-label="Marmitaê - Início">
+        <div class="brand-icon" aria-hidden="true">🍲</div>
         <div class="brand-info">
           <h1>Marmitaê</h1>
           <p>Marmitas artesanais & comida caseira de verdade</p>
         </div>
-      </div>
+      </a>
 
       <div class="header-actions">
         <!-- Indicador de Status Aberto / Horário -->
         <div class="status-indicator" title="Seg a Sáb das 11h às 15h">
-          <div class="status-dot"></div>
+          <div class="status-dot" aria-hidden="true"></div>
           <span>Aberto agora</span>
         </div>
 
-        <!-- Simulador de Dia da Semana (Útil para testes e auditoria de disponibilidade) -->
+        <!-- Simulador de Dia da Semana -->
         <div class="dia-simulador-container" title="Simular dia da semana para testar cardápio diário">
-          <i class="fa-solid fa-calendar-day text-primary"></i>
-          <label for="select-dia-simulado">Dia:</label>
-          <select id="select-dia-simulado" class="dia-simulador-select">
+          <i class="fa-solid fa-calendar-day" aria-hidden="true"></i>
+          <label for="select-dia-simulado" class="sr-only">Dia da semana</label>
+          <select id="select-dia-simulado" class="dia-simulador-select" aria-label="Simular dia da semana">
             <option value="auto">Hoje (Automático)</option>
             <option value="segunda">Segunda-feira</option>
             <option value="terca">Terça-feira</option>
@@ -52,43 +59,43 @@
         </div>
 
         <!-- Botão Catálogo Completo do Cardápio -->
-        <button id="btn-ver-cardapio-modal" class="btn-header" title="Ver cardápio completo ilustrado">
-          <i class="fa-solid fa-book-open"></i>
+        <button id="btn-ver-cardapio-modal" class="btn-header" title="Ver cardápio completo ilustrado" aria-label="Ver cardápio completo">
+          <i class="fa-solid fa-book-open" aria-hidden="true"></i>
           <span>Cardápio</span>
         </button>
 
         <!-- Botão Leitura em Voz Alta (Text-to-Speech) -->
-        <button id="btn-toggle-voz" class="btn-header" title="Ativar/Desativar leitura de voz (Text-to-Speech)">
-          <i id="icone-voz" class="fa-solid fa-comment-dots"></i>
+        <button id="btn-toggle-voz" class="btn-header" title="Ativar/Desativar leitura de voz (Text-to-Speech)" aria-label="Alternar leitura de voz" aria-pressed="false">
+          <i id="icone-voz" class="fa-solid fa-comment-dots" aria-hidden="true"></i>
           <span>Voz</span>
         </button>
 
         <!-- Botão de Efeitos Sonoros On/Off -->
-        <button id="btn-toggle-som" class="btn-header" title="Alternar efeitos sonoros">
-          <i id="icone-som" class="fa-solid fa-volume-high"></i>
+        <button id="btn-toggle-som" class="btn-header" title="Alternar efeitos sonoros" aria-label="Alternar efeitos sonoros" aria-pressed="true">
+          <i id="icone-som" class="fa-solid fa-volume-high" aria-hidden="true"></i>
         </button>
 
-        <!-- Indicador do Modo de Operação (Demo / Gemini) -->
-        <button id="btn-status-modo" class="btn-header" title="Alternar ou configurar modo de IA">
-          <i id="icone-modo" class="fa-solid fa-cube text-primary"></i>
-          <span id="texto-modo">Modo Demo</span>
+        <!-- Indicador do Modo de Operação -->
+        <div class="btn-header modo-indicador" title="Modo determinístico: Regras + NLP + TF-IDF + Cosseno" aria-label="Modo de operação: NLP Clássico Determinístico">
+          <i id="icone-modo" class="fa-solid fa-cube" aria-hidden="true"></i>
+          <span id="texto-modo">NLP Clássico</span>
+        </div>
+
+        <!-- Botão Diagnóstico NLP -->
+        <button id="btn-diagnostico-nlp" class="btn-header" title="Ver diagnóstico do processamento NLP e ELIZA" aria-label="Abrir diagnóstico NLP">
+          <i class="fa-solid fa-microscope" aria-hidden="true"></i>
+          <span>Diagnóstico</span>
         </button>
 
-        <!-- Botão Abrir Modal de Configurações da API -->
-        <button id="btn-abrir-config" class="btn-header" title="Configurar Chave da API Gemini">
-          <i class="fa-solid fa-gear"></i>
-          <span>API Gemini</span>
-        </button>
-
-        <!-- Botão de Carrinho (Mobile/Tablet ou atalho rápido) -->
-        <button id="btn-toggle-carrinho" class="btn-header" title="Ver Carrinho">
-          <i class="fa-solid fa-bag-shopping"></i>
-          <span class="cart-toggle-badge" id="badge-qtd-carrinho">0</span>
+        <!-- Botão de Carrinho -->
+        <button id="btn-toggle-carrinho" class="btn-header" title="Ver Carrinho" aria-label="Abrir carrinho de compras" aria-expanded="false" aria-controls="side-panel-carrinho">
+          <i class="fa-solid fa-bag-shopping" aria-hidden="true"></i>
+          <span class="cart-toggle-badge" id="badge-qtd-carrinho" aria-live="polite">0</span>
         </button>
 
         <!-- Botão Limpar Conversa -->
-        <button id="btn-limpar-chat" class="btn-header" title="Reiniciar atendimento">
-          <i class="fa-solid fa-arrow-rotate-right"></i>
+        <button id="btn-limpar-chat" class="btn-header" title="Reiniciar atendimento" aria-label="Limpar conversa e reiniciar">
+          <i class="fa-solid fa-arrow-rotate-right" aria-hidden="true"></i>
         </button>
       </div>
     </div>
@@ -97,99 +104,175 @@
   <!-- LAYOUT PRINCIPAL -->
   <main class="app-main">
     
-    <!-- SEÇÃO CENTRAL: CHATBOT CONVERSACIONAL -->
+    <!-- SEÇÃO PRINCIPAL: HERO + CHAT -->
     <section class="chat-section">
       
-      <!-- Banner Informativo Superior do Chat -->
-      <div class="chat-banner-info">
-        <span><i class="fa-solid fa-clock"></i> Entregas das 11h às 15h</span>
-        <span><i class="fa-solid fa-tags"></i> Cupons ativos: <strong>PRIMEIRACOMPRA</strong> (R$ 5 OFF) | <strong>MARMITAE10</strong></span>
-        <span><i class="fa-solid fa-motorcycle"></i> Frete fixo: R$ 5,00 (ou balcão grátis)</span>
-      </div>
-
-      <!-- Container das Mensagens -->
-      <div class="messages-container" id="chat-messages">
-        <!-- Mensagens inseridas dinamicamente via JavaScript -->
-      </div>
-
-      <!-- Indicador de Digitação -->
-      <div class="digitando-indicador oculto" id="chat-digitando">
-        <div class="pontos-digitando">
-          <span></span><span></span><span></span>
-        </div>
-        <span>Marmitaê está digitando...</span>
-      </div>
-
-      <!-- Sugestões Rápidas Clicáveis -->
-      <div class="quick-suggestions" id="quick-suggestions">
-        <button class="chip-btn" data-msg="Ver cardápio de hoje">📋 Cardápio de hoje</button>
-        <button class="chip-btn" data-msg="Quero uma marmita de frango grelhado">🍗 Marmita Frango</button>
-        <button class="chip-btn" data-msg="Quero um bife acebolado sem cebola">🥩 Bife sem cebola</button>
-        <button class="chip-btn" data-msg="Tem algum cupom de desconto?">🎟️ Tem cupom?</button>
-        <button class="chip-btn" data-msg="Quais são as bebidas?">🥤 Ver bebidas</button>
-        <button class="chip-btn" data-msg="Ver meu carrinho">🛒 Ver meu carrinho</button>
-      </div>
-
-      <!-- Formulário de Envio de Mensagem -->
-      <div class="chat-input-area">
-        <form id="chat-form" class="chat-form" autocomplete="off">
-          <input 
-            type="text" 
-            id="chat-input" 
-            class="chat-input" 
-            placeholder="Digite seu pedido, personalizações ou dúvidas..." 
-            maxlength="400"
-            required
-          />
-          <button type="submit" class="btn-send" id="btn-enviar" title="Enviar mensagem">
-            <i class="fa-solid fa-paper-plane"></i>
+      <!-- HERO SECTION - Apresentação do Restaurante -->
+      <section class="hero-section" aria-labelledby="hero-title">
+        <div class="hero-content">
+          <span class="hero-badge">
+            <i class="fa-solid fa-fire" aria-hidden="true"></i>
+            Feito na hora, entregue quentinho
+          </span>
+          <h1 id="hero-title" class="hero-title">Sua marmita caseira, do jeito que você gosta</h1>
+          <p class="hero-description">Monte seu prato com ingredientes frescos, personalize acompanhamentos, escolha o ponto da carne e receba no conforto da sua casa ou retire no balcão.</p>
+          
+          <div class="hero-stats" aria-label="Estatísticas do restaurante">
+            <div class="hero-stat">
+              <span class="hero-stat-value">16</span>
+              <span class="hero-stat-label">Opções no cardápio</span>
+            </div>
+            <div class="hero-stat">
+              <span class="hero-stat-value">6</span>
+              <span class="hero-stat-label">Marmitas artesanais</span>
+            </div>
+            <div class="hero-stat">
+              <span class="hero-stat-value">R$ 5</span>
+              <span class="hero-stat-label">Entrega fixa</span>
+            </div>
+            <div class="hero-stat">
+              <span class="hero-stat-value">100%</span>
+              <span class="hero-stat-label">Caseiro</span>
+            </div>
+          </div>
+          
+          <button class="hero-cta" id="btn-hero-comecar" aria-label="Começar pedido no chat">
+            <i class="fa-solid fa-comment-dots" aria-hidden="true"></i>
+            Começar meu pedido
           </button>
-        </form>
+        </div>
+      </section>
+
+      <!-- DESTAQUES DO DIA -->
+      <section class="day-highlight" aria-labelledby="destaque-title">
+        <div class="day-highlight-header">
+          <h2 id="destaque-title" class="day-highlight-title">
+            <i class="fa-solid fa-calendar-day" aria-hidden="true"></i>
+            <span id="destaque-dia-nome">Hoje</span> no Marmitaê
+          </h2>
+          <div class="day-highlight-nav">
+            <button class="day-nav-btn" id="btn-dia-anterior" aria-label="Dia anterior" title="Dia anterior">
+              <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
+            </button>
+            <button class="day-nav-btn" id="btn-dia-proximo" aria-label="Próximo dia" title="Próximo dia">
+              <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+            </button>
+          </div>
+        </div>
+        
+        <div class="destaque-grid" id="destaque-grid" role="list" aria-label="Marmitas disponíveis hoje">
+          <!-- Renderizado via app.js -->
+        </div>
+      </section>
+
+      <!-- ÁREA DO CHATBOT -->
+      <div class="chat-container" role="region" aria-label="Conversa com assistente">
+        
+        <!-- Banner Informativo -->
+        <div class="chat-banner" aria-label="Informações rápidas">
+          <div class="chat-banner-item">
+            <i class="fa-solid fa-clock" aria-hidden="true"></i>
+            <span>Entregas das 11h às 15h</span>
+          </div>
+          <div class="chat-banner-item">
+            <i class="fa-solid fa-tags" aria-hidden="true"></i>
+            <span>Cupons: <strong>PRIMEIRACOMPRA</strong> (R$ 5 OFF) | <strong>MARMITAE10</strong> (10%)</span>
+          </div>
+          <div class="chat-banner-item">
+            <i class="fa-solid fa-motorcycle" aria-hidden="true"></i>
+            <span>Frete fixo R$ 5,00 | Retirada grátis</span>
+          </div>
+        </div>
+
+        <!-- Container das Mensagens -->
+        <div class="messages-container" id="chat-messages" role="log" aria-live="polite" aria-label="Histórico da conversa">
+          <!-- Mensagens inseridas dinamicamente via JavaScript -->
+        </div>
+
+        <!-- Indicador de Digitação -->
+        <div class="digitando-indicador hidden" id="chat-digitando" aria-label="Assistente digitando" aria-hidden="true">
+          <div class="pontos-digitando" aria-hidden="true">
+            <span></span><span></span><span></span>
+          </div>
+          <span>Marmitaê está digitando...</span>
+        </div>
+
+        <!-- Sugestões Rápidas Clicáveis -->
+        <div class="quick-suggestions" id="quick-suggestions" role="group" aria-label="Sugestões rápidas">
+          <button class="chip-btn" data-msg="Ver cardápio de hoje" aria-label="Ver cardápio de hoje">📋 Cardápio de hoje</button>
+          <button class="chip-btn" data-msg="Quero uma marmita de frango grelhado" aria-label="Pedir marmita de frango">🍗 Marmita Frango</button>
+          <button class="chip-btn" data-msg="Quero um bife acebolado sem cebola" aria-label="Pedir bife sem cebola">🥩 Bife sem cebola</button>
+          <button class="chip-btn" data-msg="Tem algum cupom de desconto?" aria-label="Ver cupons disponíveis">🎟️ Tem cupom?</button>
+          <button class="chip-btn" data-msg="Quais são as bebidas?" aria-label="Ver bebidas">🥤 Ver bebidas</button>
+          <button class="chip-btn" data-msg="Ver meu carrinho" aria-label="Ver carrinho">🛒 Ver meu carrinho</button>
+        </div>
+
+        <!-- Formulário de Envio de Mensagem -->
+        <div class="chat-input-area" role="form" aria-label="Enviar mensagem">
+          <form id="chat-form" class="chat-form" autocomplete="off">
+            <div class="chat-input-wrapper">
+              <input 
+                type="text" 
+                id="chat-input" 
+                class="chat-input" 
+                placeholder="Digite seu pedido, personalizações ou dúvidas..." 
+                maxlength="400"
+                required
+                aria-label="Sua mensagem"
+                autocomplete="off"
+              />
+              <button type="submit" class="chat-input-send" id="btn-enviar" title="Enviar mensagem" aria-label="Enviar">
+                <i class="fa-solid fa-paper-plane" aria-hidden="true"></i>
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
+
     </section>
 
     <!-- BACKDROP MOBILE PARA FECHAR O DRAWER DO CARRINHO -->
-    <div class="side-panel-backdrop" id="cart-backdrop"></div>
+    <div class="side-panel-backdrop" id="cart-backdrop" aria-hidden="true"></div>
 
-    <!-- PAINEL LATERAL: CARRINHO DE COMPRAS SINCRONIZADO -->
-    <aside class="side-panel" id="side-panel-carrinho">
+    <!-- PAINEL LATERAL: CARRINHO DE COMPRAS -->
+    <aside class="side-panel cart-panel" id="side-panel-carrinho" role="complementary" aria-label="Carrinho de compras" aria-hidden="true">
       <div class="cart-card">
         
         <!-- Cabeçalho do Carrinho -->
         <div class="cart-header">
           <div class="cart-title">
-            <i class="fa-solid fa-basket-shopping text-primary"></i>
+            <i class="fa-solid fa-basket-shopping" aria-hidden="true"></i>
             <span>Seu Pedido</span>
           </div>
-          <button class="btn-close-modal btn-close-cart-mobile" id="btn-fechar-carrinho-mobile" style="display:none;">
-            <i class="fa-solid fa-xmark"></i>
+          <button class="btn-close-modal btn-close-cart-mobile" id="btn-fechar-carrinho-mobile" aria-label="Fechar carrinho" style="display:none;">
+            <i class="fa-solid fa-xmark" aria-hidden="true"></i>
           </button>
         </div>
 
         <!-- Lista de Itens do Carrinho -->
-        <div class="cart-items-list" id="cart-items-list">
+        <div class="cart-items" id="cart-items-list" role="list" aria-label="Itens do pedido">
           <!-- Renderizado via cart.js / app.js -->
         </div>
 
-        <!-- Área de Inserção de Cupom -->
-        <div class="cart-coupon-area" id="cart-coupon-area">
+        <!-- Área de Cupons -->
+        <div class="cart-coupons" id="cart-coupon-area">
           <div id="coupon-input-group" class="coupon-form">
-            <input type="text" id="input-cupom" class="input-coupon" placeholder="CUPOM (Ex: PRIMEIRACOMPRA)" maxlength="20" />
-            <button type="button" id="btn-aplicar-cupom" class="btn-apply-coupon">Aplicar</button>
+            <input type="text" id="input-cupom" class="coupon-input" placeholder="CUPOM (Ex: PRIMEIRACOMPRA)" maxlength="20" aria-label="Código do cupom" />
+            <button type="button" id="btn-aplicar-cupom" class="btn-coupon" aria-label="Aplicar cupom">Aplicar</button>
           </div>
-          <div id="coupon-applied-group" class="applied-coupon-badge oculto">
+          <div id="coupon-applied-group" class="coupon-applied hidden" role="status" aria-live="polite">
             <span id="coupon-applied-text">Cupom: PRIMEIRACOMPRA (-R$ 5,00)</span>
-            <button type="button" id="btn-remover-cupom" class="btn-remove-coupon" title="Remover cupom">&times;</button>
+            <button type="button" id="btn-remover-cupom" class="btn-remove-coupon" title="Remover cupom" aria-label="Remover cupom aplicado">&times;</button>
           </div>
         </div>
 
-        <!-- Rodapé do Carrinho com Subtotal, Descontos, Frete e Botão de Ação -->
-        <div class="cart-footer">
+        <!-- Rodapé do Carrinho com Totais -->
+        <div class="cart-totals">
           <div class="summary-row">
             <span>Subtotal</span>
             <span id="cart-subtotal">R$ 0,00</span>
           </div>
-          <div class="summary-row summary-discount oculto" id="cart-row-desconto">
+          <div class="summary-row summary-discount hidden" id="cart-row-desconto">
             <span>Desconto (Cupom)</span>
             <span id="cart-desconto">- R$ 0,00</span>
           </div>
@@ -202,9 +285,9 @@
             <span class="total-valor" id="cart-total">R$ 0,00</span>
           </div>
 
-          <button id="btn-finalizar-pedido" class="cart-btn-checkout">
-            <i class="fa-solid fa-circle-check"></i>
-            <span>Fechar Pedido no Chat</span>
+          <button id="btn-finalizar-pedido" class="btn-checkout" disabled aria-label="Finalizar pedido">
+            <i class="fa-solid fa-circle-check" aria-hidden="true"></i>
+            <span>Finalizar Pedido</span>
           </button>
         </div>
 
@@ -213,143 +296,211 @@
 
   </main>
 
-  <!-- MODAL DE CONFIGURAÇÃO DE CHAVE DE API GEMINI -->
-  <div class="modal-overlay oculto" id="modal-config">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h3><i class="fa-solid fa-key text-primary"></i> Configuração da API Gemini</h3>
-        <button class="btn-close-modal" id="btn-fechar-modal-config">&times;</button>
-      </div>
-      
-      <div class="modal-body">
-        <div class="info-box">
-          <i class="fa-solid fa-shield-halved"></i>
-          <strong>Privacidade e Segurança Client-Side:</strong> Esta aplicação roda 100% no seu navegador. Sua chave é gravada estritamente na memória temporária da sessão (<code>sessionStorage</code>) e é utilizada apenas em chamadas diretas à API do Google Gemini.
-        </div>
-
-        <div class="form-group">
-          <label for="input-api-key">Chave de API do Google Gemini (AI Studio):</label>
-          <input 
-            type="password" 
-            id="input-api-key" 
-            class="input-text" 
-            placeholder="AIzaSy..." 
-          />
-          <small class="text-muted">Obtenha sua chave gratuitamente em <a href="https://aistudio.google.com/" target="_blank" rel="noopener">Google AI Studio</a>.</small>
-        </div>
-
-        <div class="form-group">
-          <label>Modo de Operação Selecionado:</label>
-          <div style="display:flex; gap: 1rem; align-items:center; margin-top:0.25rem;">
-            <label style="cursor:pointer; display:flex; align-items:center; gap:0.4rem;">
-              <input type="radio" name="modo_operacao" value="demo" id="radio-demo" checked>
-              Modo Demonstração (Sem chave)
-            </label>
-            <label style="cursor:pointer; display:flex; align-items:center; gap:0.4rem;">
-              <input type="radio" name="modo_operacao" value="llm" id="radio-llm">
-              Modo IA Gemini (Com chave)
-            </label>
-          </div>
-        </div>
-
-        <div id="status-teste-conexao" style="font-size: 0.85rem; font-weight: 600; padding: 0.4rem 0;"></div>
-      </div>
-
-      <div class="modal-footer">
-        <button type="button" class="btn-info" id="btn-testar-conexao">Testar Conexão</button>
-        <button type="button" class="btn-danger" id="btn-limpar-chave">Limpar Chave</button>
-        <button type="button" class="btn-secondary" id="btn-cancelar-modal">Cancelar</button>
-        <button type="button" class="btn-primary" id="btn-salvar-chave">Salvar Configuração</button>
-      </div>
-    </div>
-  </div>
-
   <!-- MODAL CARDÁPIO COMPLETO INTERATIVO -->
-  <div class="modal-overlay oculto" id="modal-cardapio">
-    <div class="modal-card modal-cardapio-card">
+  <div class="modal-overlay hidden" id="modal-cardapio" role="dialog" aria-modal="true" aria-labelledby="modal-cardapio-title">
+    <div class="modal modal-cardapio">
       <div class="modal-header">
-        <h3><i class="fa-solid fa-utensils text-primary"></i> Cardápio Oficial Marmitaê</h3>
-        <button class="btn-close-modal" id="btn-fechar-modal-cardapio">&times;</button>
+        <h3 id="modal-cardapio-title"><i class="fa-solid fa-utensils" aria-hidden="true"></i> Cardápio Oficial Marmitaê</h3>
+        <button class="btn-modal-close" id="btn-fechar-modal-cardapio" aria-label="Fechar cardápio">&times;</button>
       </div>
 
       <div class="modal-body">
-        <div class="menu-filter-bar">
-          <div class="menu-tabs">
-            <button class="menu-tab-btn ativo" data-categoria="todos">Todos</button>
-            <button class="menu-tab-btn" data-categoria="marmitas">Marmitas</button>
-            <button class="menu-tab-btn" data-categoria="bebidas">Bebidas</button>
-            <button class="menu-tab-btn" data-categoria="sobremesas">Sobremesas</button>
+        <div class="menu-filter">
+          <div class="menu-tabs" role="tablist" aria-label="Categorias do cardápio">
+            <button class="menu-tab active" data-categoria="todos" role="tab" aria-selected="true" aria-controls="panel-todos">Todos</button>
+            <button class="menu-tab" data-categoria="marmitas" role="tab" aria-selected="false" aria-controls="panel-marmitas">Marmitas</button>
+            <button class="menu-tab" data-categoria="bebidas" role="tab" aria-selected="false" aria-controls="panel-bebidas">Bebidas</button>
+            <button class="menu-tab" data-categoria="sobremesas" role="tab" aria-selected="false" aria-controls="panel-sobremesas">Sobremesas</button>
           </div>
-          <div class="menu-search-box">
-            <input type="text" id="input-busca-cardapio" class="input-text" placeholder="Buscar prato ou ingrediente..." />
+          <div class="menu-search">
+            <input type="text" id="input-busca-cardapio" class="menu-search-input" placeholder="Buscar prato ou ingrediente..." aria-label="Buscar no cardápio" />
           </div>
         </div>
 
-        <div class="menu-items-grid" id="modal-menu-grid">
+        <div class="menu-grid" id="modal-menu-grid" role="list" aria-label="Itens do cardápio">
           <!-- Renderizado via app.js -->
         </div>
       </div>
 
       <div class="modal-footer">
-        <button type="button" class="btn-secondary" id="btn-fechar-modal-cardapio-rodape">Fechar</button>
+        <button type="button" class="btn-modal-secondary" id="btn-fechar-modal-cardapio-rodape">Fechar</button>
       </div>
     </div>
   </div>
 
   <!-- MODAL RASTREADOR DE PEDIDO EM TEMPO REAL -->
-  <div class="modal-overlay oculto" id="modal-tracker">
-    <div class="modal-card">
+  <div class="modal-overlay hidden" id="modal-tracker" role="dialog" aria-modal="true" aria-labelledby="modal-tracker-title">
+    <div class="modal">
       <div class="modal-header">
-        <h3><i class="fa-solid fa-route text-primary"></i> Acompanhamento do Pedido</h3>
-        <button class="btn-close-modal" id="btn-fechar-modal-tracker">&times;</button>
+        <h3 id="modal-tracker-title"><i class="fa-solid fa-route" aria-hidden="true"></i> Acompanhamento do Pedido</h3>
+        <button class="btn-modal-close" id="btn-fechar-modal-tracker" aria-label="Fechar rastreador">&times;</button>
       </div>
 
       <div class="modal-body">
-        <div style="text-align: center; margin-bottom: 0.5rem;">
-          <h4 id="tracker-numero-pedido" style="font-size: 1.25rem; color: var(--primary-dark);">#MAR-1234</h4>
-          <p id="tracker-cliente-info" style="font-size: 0.85rem; color: var(--text-muted);">Cliente: Maria Silva</p>
-        </div>
+        <div class="tracker-container">
+          <div class="tracker-header">
+            <h4 id="tracker-numero-pedido">#MAR-1234</h4>
+            <p id="tracker-cliente-info">Cliente: Maria Silva</p>
+          </div>
 
-        <div class="tracker-stepper">
-          <div class="tracker-progress-bar" id="tracker-progress-line" style="width: 25%;"></div>
-          
-          <div class="tracker-step concluido" id="step-1">
-            <div class="tracker-step-icon"><i class="fa-solid fa-receipt"></i></div>
-            <span class="tracker-step-label">Recebido</span>
+          <div class="tracker-stepper" role="list" aria-label="Etapas do pedido">
+            <div class="tracker-progress-bar" id="tracker-progress-line" style="width: 25%;" role="progressbar" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div>
+            
+            <div class="tracker-step concluido" id="step-1" role="listitem">
+              <div class="tracker-step-icon"><i class="fa-solid fa-receipt" aria-hidden="true"></i></div>
+              <span class="tracker-step-label">Recebido</span>
+            </div>
+            
+            <div class="tracker-step ativo" id="step-2" role="listitem">
+              <div class="tracker-step-icon"><i class="fa-solid fa-fire-burner" aria-hidden="true"></i></div>
+              <span class="tracker-step-label">Na Cozinha</span>
+            </div>
+            
+            <div class="tracker-step" id="step-3" role="listitem">
+              <div class="tracker-step-icon"><i class="fa-solid fa-motorcycle" aria-hidden="true"></i></div>
+              <span class="tracker-step-label">A Caminho</span>
+            </div>
+            
+            <div class="tracker-step" id="step-4" role="listitem">
+              <div class="tracker-step-icon"><i class="fa-solid fa-circle-check" aria-hidden="true"></i></div>
+              <span class="tracker-step-label">Entregue</span>
+            </div>
           </div>
-          
-          <div class="tracker-step ativo" id="step-2">
-            <div class="tracker-step-icon"><i class="fa-solid fa-fire-burner"></i></div>
-            <span class="tracker-step-label">Na Cozinha</span>
-          </div>
-          
-          <div class="tracker-step" id="step-3">
-            <div class="tracker-step-icon"><i class="fa-solid fa-motorcycle"></i></div>
-            <span class="tracker-step-label">A Caminho</span>
-          </div>
-          
-          <div class="tracker-step" id="step-4">
-            <div class="tracker-step-icon"><i class="fa-solid fa-circle-check"></i></div>
-            <span class="tracker-step-label">Entregue</span>
-          </div>
-        </div>
 
-        <div class="info-box" id="tracker-status-mensagem">
-          👨‍🍳 <strong>Seu pedido está sendo preparado com muito carinho!</strong> Os acompanhamentos e marmitas estão fresquinhos na chapa.
+          <div class="tracker-status" id="tracker-status-mensagem" role="status" aria-live="polite">
+            <i class="fa-solid fa-user-chef" aria-hidden="true"></i> <strong>Seu pedido está sendo preparado com muito carinho!</strong> Os acompanhamentos e marmitas estão fresquinhos na chapa.
+          </div>
         </div>
       </div>
 
       <div class="modal-footer">
-        <button type="button" class="btn-info" id="btn-avancar-etapa-tracker" title="Avançar etapa para demonstração acadêmica">
-          <i class="fa-solid fa-forward-step"></i> Simular Avanço de Etapa
+        <button type="button" class="btn-modal-info" id="btn-avancar-etapa-tracker" title="Avançar etapa para demonstração">
+          <i class="fa-solid fa-forward-step" aria-hidden="true"></i> Simular Avanço
         </button>
-        <button type="button" class="btn-secondary" id="btn-fechar-modal-tracker-rodape">Fechar</button>
+        <button type="button" class="btn-modal-secondary" id="btn-fechar-modal-tracker-rodape">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DIAGNÓSTICO NLP / ELIZA -->
+  <div class="modal-overlay hidden" id="modal-diagnostico" role="dialog" aria-modal="true" aria-labelledby="modal-diagnostico-title">
+    <div class="modal modal-diagnostico">
+      <div class="modal-header">
+        <h3 id="modal-diagnostico-title"><i class="fa-solid fa-microscope" aria-hidden="true"></i> Diagnóstico do Processamento NLP & ELIZA</h3>
+        <button class="btn-modal-close" id="btn-fechar-modal-diagnostico" aria-label="Fechar diagnóstico">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="diagnostico-grid">
+          
+          <!-- NLP Clássico -->
+          <div class="diagnostico-section">
+            <h4 class="diagnostico-title"><i class="fa-solid fa-comment" aria-hidden="true"></i> 1. Mensagem Original</h4>
+            <pre id="diag-mensagem-original" class="diagnostico-content"></pre>
+          </div>
+
+          <div class="diagnostico-section">
+            <h4 class="diagnostico-title"><i class="fa-solid fa-arrow-down-wide-short" aria-hidden="true"></i> 2. Mensagem Normalizada</h4>
+            <pre id="diag-mensagem-normalizada" class="diagnostico-content"></pre>
+          </div>
+
+          <div class="diagnostico-section">
+            <h4 class="diagnostico-title"><i class="fa-solid fa-list-ol" aria-hidden="true"></i> 3. Tokens Encontrados</h4>
+            <pre id="diag-tokens" class="diagnostico-content"></pre>
+          </div>
+
+          <div class="diagnostico-section">
+            <h4 class="diagnostico-title"><i class="fa-solid fa-filter" aria-hidden="true"></i> 4. Stopwords Removidas</h4>
+            <pre id="diag-stopwords" class="diagnostico-content"></pre>
+          </div>
+
+          <div class="diagnostico-section">
+            <h4 class="diagnostico-title"><i class="fa-solid fa-root" aria-hidden="true"></i> 5. Radicais (Stemming)</h4>
+            <pre id="diag-radicais" class="diagnostico-content"></pre>
+          </div>
+
+          <div class="diagnostico-section">
+            <h4 class="diagnostico-title"><i class="fa-solid fa-vector-square" aria-hidden="true"></i> 6. Vetor Bag of Words</h4>
+            <pre id="diag-bow" class="diagnostico-content"></pre>
+          </div>
+
+          <div class="diagnostico-section">
+            <h4 class="diagnostico-title"><i class="fa-solid fa-chart-line" aria-hidden="true"></i> 7. Vetor TF-IDF</h4>
+            <pre id="diag-tfidf" class="diagnostico-content"></pre>
+          </div>
+
+          <div class="diagnostico-section">
+            <h4 class="diagnostico-title"><i class="fa-solid fa-target" aria-hidden="true"></i> 8. Intenção Selecionada (NLP)</h4>
+            <pre id="diag-intencao" class="diagnostico-content"></pre>
+          </div>
+
+          <div class="diagnostico-section">
+            <h4 class="diagnostico-title"><i class="fa-solid fa-scale-balanced" aria-hidden="true"></i> 9. Similaridade de Cosseno</h4>
+            <pre id="diag-cosseno" class="diagnostico-content"></pre>
+          </div>
+
+          <div class="diagnostico-section">
+            <h4 class="diagnostico-title"><i class="fa-solid fa-ruler" aria-hidden="true"></i> 10. Limiar Mínimo Utilizado</h4>
+            <pre id="diag-limiar" class="diagnostico-content"></pre>
+          </div>
+
+          <div class="diagnostico-section">
+            <h4 class="diagnostico-title"><i class="fa-solid fa-route" aria-hidden="true"></i> 11. Método de Classificação</h4>
+            <pre id="diag-metodo" class="diagnostico-content"></pre>
+          </div>
+
+          <!-- ELIZA Diagnóstico -->
+          <div class="diagnostico-section full-width">
+            <h4 class="diagnostico-title"><i class="fa-solid fa-robot" style="color: var(--brand-teal);" aria-hidden="true"></i> 12. ELIZA - Algoritmo Clássico de Conversação (Weizenbaum 1966)</h4>
+            <p style="font-size: 0.8125rem; color: var(--text-muted); margin-bottom: 0.75rem;">Reconhecimento de padrões, decomposição, remontagem e reflexão de pronomes.</p>
+          </div>
+
+          <div class="diagnostico-section">
+            <h4 class="diagnostico-title"><i class="fa-solid fa-key" aria-hidden="true"></i> Palavra-chave Identificada</h4>
+            <pre id="diag-eliza-keyword" class="diagnostico-content"></pre>
+          </div>
+
+          <div class="diagnostico-section">
+            <h4 class="diagnostico-title"><i class="fa-solid fa-sort-numeric-up" aria-hidden="true"></i> Prioridade da Palavra-chave</h4>
+            <pre id="diag-eliza-prioridade" class="diagnostico-content"></pre>
+          </div>
+
+          <div class="diagnostico-section">
+            <h4 class="diagnostico-title"><i class="fa-solid fa-sitemap" aria-hidden="true"></i> Padrão de Decomposição Selecionado</h4>
+            <pre id="diag-eliza-padrao" class="diagnostico-content"></pre>
+          </div>
+
+          <div class="diagnostico-section">
+            <h4 class="diagnostico-title"><i class="fa-solid fa-parentheses" aria-hidden="true"></i> Grupos Capturados (Variáveis $1, $2...)</h4>
+            <pre id="diag-eliza-grupos" class="diagnostico-content"></pre>
+          </div>
+
+          <div class="diagnostico-section">
+            <h4 class="diagnostico-title"><i class="fa-solid fa-left-right" aria-hidden="true"></i> Reflexões Realizadas (Pronomes/Expressões)</h4>
+            <pre id="diag-eliza-reflexoes" class="diagnostico-content"></pre>
+          </div>
+
+          <div class="diagnostico-section">
+            <h4 class="diagnostico-title"><i class="fa-solid fa-puzzle-piece" aria-hidden="true"></i> Regra de Remontagem Utilizada</h4>
+            <pre id="diag-eliza-remontagem" class="diagnostico-content"></pre>
+          </div>
+
+          <div class="diagnostico-section">
+            <h4 class="diagnostico-title"><i class="fa-solid fa-comment-dots" aria-hidden="true"></i> Resposta Produzida pelo ELIZA</h4>
+            <pre id="diag-eliza-resposta" class="diagnostico-content"></pre>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn-modal-secondary" id="btn-fechar-modal-diagnostico-rodape">Fechar</button>
       </div>
     </div>
   </div>
 
   <!-- CONTAINER DE TOASTS FLUTUANTES -->
-  <div class="toast-container" id="toast-container"></div>
+  <div class="toast-container" id="toast-container" aria-live="polite" aria-label="Notificações"></div>
 
   <!-- SCRIPT PRINCIPAL ES6 MODULE -->
   <script type="module" src="js/app.js"></script>
