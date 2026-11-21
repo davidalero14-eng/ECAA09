@@ -42,9 +42,9 @@ export class ChatbotUI {
 
     let badgeHtml = '';
     if (modoUsado === 'llm') {
-      badgeHtml = '<span class="badge-modo badge-ia" title="Processado por IA (Google Gemini 1.5 Flash)"><i class="fa-solid fa-sparkles"></i> IA Gemini</span>';
-    } else if (modoUsado === 'demo') {
-      badgeHtml = '<span class="badge-modo badge-demo" title="Processado pelo Motor Determinístico Local"><i class="fa-solid fa-cube"></i> Modo Demo</span>';
+      badgeHtml = '<span class="badge-modo badge-ia" title="Processado por IA (Google Gemini)"><i class="fa-solid fa-sparkles"></i> IA Gemini</span>';
+    } else if (modoUsado === 'demo' || modoUsado === 'sem_llm') {
+      badgeHtml = '<span class="badge-modo badge-demo" title="Processado 100% Client-Side por Regras + NLP + TF-IDF + Cosseno"><i class="fa-solid fa-cube"></i> IA Local (Sem LLM)</span>';
     } else if (modoUsado === 'guardrails') {
       badgeHtml = '<span class="badge-modo badge-guardrail" title="Filtro Ativo de Segurança e Integridade"><i class="fa-solid fa-shield-halved"></i> Guardrail Ativo</span>';
     } else if (modoUsado === 'fallback') {

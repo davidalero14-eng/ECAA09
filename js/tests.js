@@ -249,5 +249,19 @@ export function runAllTests() {
     assert('Teste 18 - Continuidade de Estado (Recusa de sobremesa com "nao" avança checkout)', sugeriuSobremesa && avancouCheckout, `Resposta recusa: ${respRecusa.resposta.slice(0, 50)}...`);
   }
 
+  // TESTE 19 - Classificação Semântica Vetorial por NLP (TF-IDF + Similaridade de Cosseno >= 0.65)
+  {
+    const cart = new Carrinho();
+    const chk = new CheckoutManager(cart);
+    const agent = new DeterministicAgent(cart, chk);
+
+    // Pergunta semântica sobre recomendações e pratos mais vendidos
+    const resp = agent.processarMensagem('Qual é a melhor opção que vocês mais vendem aqui?');
+    const temBifeRecomendado = resp.resposta.includes('Bife Acebolado') || resp.resposta.includes('Parmegiana');
+    const executouSemantica = resp.acoesExecutadas.some(a => a.tipo === 'intencao_semantica');
+
+    assert('Teste 19 - IA Clássica: Classificação Semântica Vetorial (TF-IDF + Cosseno)', temBifeRecomendado && executouSemantica, `Intenção acionada: ${executouSemantica}`);
+  }
+
   return results;
 }

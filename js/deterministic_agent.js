@@ -7,6 +7,8 @@
 
 import { CARDAPIO, consultarCardapio, buscarProdutoPorNome, buscarProdutoPorId, getDiaAtual, DIAS_SEMANA_NOMES, CUPONS_VALIDOS } from './menu.js';
 import { FORMAS_PAGAMENTO } from './checkout.js';
+import { SemanticMatcher } from './nlp_engine.js';
+import { BASE_INTENCOES } from './intents_data.js';
 
 export class DeterministicAgent {
   constructor(carrinho, checkout) {
@@ -14,6 +16,7 @@ export class DeterministicAgent {
     this.checkout = checkout;
     this.ultimoItemMencionadoId = null;
     this.aguardandoDado = null; // 'nome' | 'endereco' | 'formaPagamento' | 'troco' | 'sugestao'
+    this.semanticMatcher = new SemanticMatcher(BASE_INTENCOES);
   }
 
   reset() {
@@ -532,7 +535,67 @@ export class DeterministicAgent {
     }
 
     // =========================================================================
-    // 17. RESPOSTA PADRÃO ACOLHEDORA, INTELIGENTE E CONTEXTUALIZADA
+    // 17. CAMADA SEMÂNTICA VETORIAL DE ALTA PRECISÃO (TF-IDF + COSSENO >= 0.65)
+    // =========================================================================
+    // Para dúvidas ou frases que não casaram com as regras anteriores:
+    if (this.semanticMatcher) {
+      const matchSemantico = this.semanticMatcher.classificar(raw, 0.65);
+      if (matchSemantico.match && matchSemantico.item) {
+        const itemIntencao = matchSemantico.item;
+        acoes.push({
+          tipo: 'intencao_semantica',
+          tag: matchSemantico.tag,
+          score: matchSemantico.score
+        });
+
+        if (itemIntencao.acao === 'consultar_cardapio') {
+          const diaAtual = getDiaAtual();
+          const disponiveisHoje = consultarCardapio(diaAtual, 'marmitas');
+          return {
+            resposta: itemIntencao.resposta,
+            acoesExecutadas: acoes,
+            cards: disponiveisHoje
+          };
+        } else if (itemIntencao.acao === 'consultar_vegetariana') {
+          const veg = CARDAPIO.find(p => p.id === 'marmita-vegetariana');
+          return {
+            resposta: itemIntencao.resposta,
+            acoesExecutadas: acoes,
+            cards: veg ? [veg] : null
+          };
+        } else if (itemIntencao.acao === 'consultar_bebidas') {
+          const bebidas = CARDAPIO.filter(p => p.categoria === 'bebidas');
+          return {
+            resposta: itemIntencao.resposta,
+            acoesExecutadas: acoes,
+            cards: bebidas
+          };
+        } else if (itemIntencao.acao === 'consultar_sobremesas') {
+          const doces = CARDAPIO.filter(p => p.categoria === 'sobremesas');
+          return {
+            resposta: itemIntencao.resposta,
+            acoesExecutadas: acoes,
+            cards: doces
+          };
+        } else if (itemIntencao.acao === 'limpar_carrinho') {
+          this.carrinho.limpar();
+          this.checkout.reset();
+          this.reset();
+          return {
+            resposta: itemIntencao.resposta,
+            acoesExecutadas: acoes
+          };
+        }
+
+        return {
+          resposta: itemIntencao.resposta,
+          acoesExecutadas: acoes
+        };
+      }
+    }
+
+    // =========================================================================
+    // 18. RESPOSTA PADRÃO ACOLHEDORA, INTELIGENTE E CONTEXTUALIZADA
     // =========================================================================
     const estado = this.carrinho.obterEstado();
     if (!estado.vazio) {
